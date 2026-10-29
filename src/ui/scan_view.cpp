@@ -63,7 +63,7 @@ void ScanView::setRotationDeg(double deg) {
 void ScanView::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event);
     QPainter p(this);
-    p.fillRect(rect(), QColor(10, 10, 10));
+    p.fillRect(rect(), QColor(0, 0, 0));
 
     const double cx = width() / 2.0;
     const double cy = height() / 2.0;

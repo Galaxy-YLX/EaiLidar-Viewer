@@ -93,9 +93,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addWidget(rotationCombo_);
     toolbar->addWidget(sizeSpin_);
 
-    // 侧边控制面板：开机 / 关机 / 量程
+    // 侧边控制面板：开机 / 关机 / 量程（无标题栏、无边框，固定停靠右侧）
     auto* controlDock = new QDockWidget(tr("控制"), this);
-    controlDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    controlDock->setFeatures(QDockWidget::NoDockWidgetFeatures);
+    controlDock->setTitleBarWidget(new QWidget(controlDock)); // 空标题栏 = 隐藏框
     auto* dockWidget = new QWidget(controlDock);
     auto* dockLayout = new QVBoxLayout(dockWidget);
     dockLayout->addWidget(powerOnButton_);
