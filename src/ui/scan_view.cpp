@@ -32,10 +32,31 @@ double niceStep(double range_mm) {
 
 ScanView::ScanView(QWidget* parent) : QWidget(parent) {
     setMinimumSize(400, 400);
+    slots_.resize(kSlotsPerRevolution);
 }
 
 void ScanView::setScan(const std::shared_ptr<const Scan>& scan) {
-    scan_ = scan;
+    if (scan == nullptr) {
+        slots_.assign(kSlotsPerRevolution, Point{});
+        point_count_ = 0;
+        update();
+        return;
+    }
+
+    // 逐点按其角度写入槽位，覆盖该角度上一次的数据
+    for (const auto& pt : scan->points) {
+        double ang = std::fmod(pt.angle_deg, 360.0);
+        if (ang < 0.0) ang += 360.0;
+        const int slot = static_cast<int>(std::lround(ang / 360.0 * kSlotsPerRevolution)) %
+                         kSlotsPerRevolution;
+        Point& dst = slots_[slot];
+        const bool wasValid = dst.valid;
+        dst = pt;
+        dst.angle_deg = ang; // 归一化角度
+        if (wasValid != dst.valid) {
+            point_count_ += dst.valid ? 1 : -1;
+        }
+    }
     update();
 }
 
@@ -112,15 +133,15 @@ void ScanView::paintEvent(QPaintEvent* event) {
     }
     p.setFont(oldFont);
 
-    // 整圈替换，直接画最新一圈
-    if (!scan_ || scan_->points.empty()) {
+    // 画槽位中的有效点
+    if (point_count_ == 0) {
         p.setPen(QColor(60, 92, 68));
         p.drawText(rect(), Qt::AlignCenter, tr("No data"));
         return;
     }
     p.setPen(Qt::NoPen);
     p.setBrush(kPointColor);
-    for (const auto& pt : scan_->points) {
+    for (const auto& pt : slots_) {
         if (!pt.valid) continue;
         p.drawEllipse(toScreen(pt.x_mm, pt.y_mm), point_radius_, point_radius_);
     }

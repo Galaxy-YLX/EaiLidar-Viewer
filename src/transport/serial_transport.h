@@ -44,12 +44,10 @@ private slots:
 
 private:
     void onFrame(const std::uint8_t* data, std::size_t len);
-    void flushPending();
 
     QSerialPort serial_;
     FrameAssembler assembler_;
     double last_freq_hz_ = 0.0;
-    Scan pending_; // 跨帧累积一整圈的点，遇到起始帧或超上限时整体发出
 };
 
 } // namespace eai

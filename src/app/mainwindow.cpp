@@ -155,7 +155,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     connect(transport_, &SerialTransport::scanReady, this, [this](const std::shared_ptr<Scan>& s) {
         view_->setScan(s);
         statusLabel_->setText(tr("已连接 · %1 点 · %2 Hz")
-                                  .arg(QString::number(s->points.size()))
+                                  .arg(QString::number(view_->pointCount()))
                                   .arg(QString::number(s->scan_freq_hz, 'f', 1)));
     });
     connect(transport_, &SerialTransport::frameError, this, [this](const QString& msg) {

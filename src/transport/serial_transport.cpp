@@ -7,9 +7,6 @@
 namespace eai {
 namespace {
 
-// 起始帧偶发丢失时的安全上限：防止 pending_ 无限增长。
-constexpr std::size_t kMaxPointsPerRotation = 1000;
-
 // 雷达控制命令帧（实测）：开机 A5 60，关机 A5 65。
 // 注：与数据帧头 AA 55 不同，命令帧头是 A5。
 const QByteArray kPowerOnCmd("\xA5\x60", 2);
@@ -57,7 +54,6 @@ bool SerialTransport::open(const QString& portName, int baudRate) {
     }
     assembler_.reset();
     last_freq_hz_ = 0.0;
-    pending_ = Scan{};
     emit opened(true);
     return true;
 }
@@ -99,26 +95,17 @@ void SerialTransport::onFrame(const std::uint8_t* data, std::size_t len) {
     switch (type) {
     case FrameType::Start:
         last_freq_hz_ = scan.scan_freq_hz;
-        flushPending(); // 新一圈开始，此前累积的点即完整上一圈
         break;
     case FrameType::Scan: {
-        pending_.points.insert(pending_.points.end(), scan.points.begin(), scan.points.end());
-        if (pending_.points.size() >= kMaxPointsPerRotation) {
-            flushPending();
-        }
+        // 逐帧立即发出，显示层按角度覆盖刷新
+        scan.scan_freq_hz = last_freq_hz_;
+        emit scanReady(std::make_shared<Scan>(std::move(scan)));
         break;
     }
     case FrameType::Invalid:
         emit frameError(tr("无效帧（帧头/长度错误）"));
         break;
     }
-}
-
-void SerialTransport::flushPending() {
-    if (pending_.points.empty()) return;
-    pending_.scan_freq_hz = last_freq_hz_;
-    emit scanReady(std::make_shared<Scan>(std::move(pending_)));
-    pending_ = Scan{};
 }
 
 } // namespace eai
