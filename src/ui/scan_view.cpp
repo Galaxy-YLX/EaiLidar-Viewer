@@ -130,6 +130,20 @@ void ScanView::paintEvent(QPaintEvent* event) {
     p.drawLine(QPointF(cx - range_mm_ * scale, cy), QPointF(cx + range_mm_ * scale, cy));
     p.drawLine(QPointF(cx, cy - range_mm_ * scale), QPointF(cx, cy + range_mm_ * scale));
 
+    // 距离标尺：X 轴正半轴每 1 m 一个刻度线 + 距离标注（米）
+    p.setPen(QPen(QColor(110, 110, 120), 1));
+    const QFont oldFont = p.font();
+    QFont rulerFont = oldFont;
+    rulerFont.setPointSizeF(8.0);
+    p.setFont(rulerFont);
+    for (double d = 1000.0; d <= range_mm_; d += 1000.0) {
+        const double x = cx + d * scale;
+        p.drawLine(QPointF(x, cy - 4), QPointF(x, cy + 4));
+        p.drawText(QRectF(x - 24, cy + 6, 48, 12), Qt::AlignHCenter | Qt::AlignTop,
+                   QString::number(static_cast<int>(d) / 1000) + tr("m"));
+    }
+    p.setFont(oldFont);
+
     // 无尾迹：整圈替换，直接画最新一圈
     if (retain_ms_ == 0) {
         if (!latest_ || latest_->points.empty()) {
