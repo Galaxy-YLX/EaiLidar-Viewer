@@ -83,9 +83,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addWidget(portCombo_);
     toolbar->addWidget(new QLabel(tr(" 波特率 "), this));
     toolbar->addWidget(baudCombo_);
+    toolbar->addWidget(refreshButton);
     toolbar->addWidget(connectButton_);
     toolbar->addWidget(disconnectButton_);
-    toolbar->addWidget(refreshButton);
     toolbar->addWidget(powerOnButton_);
     toolbar->addWidget(powerOffButton_);
     toolbar->addSeparator();
