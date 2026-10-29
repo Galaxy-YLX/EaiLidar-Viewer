@@ -25,6 +25,10 @@ public:
     void setRetainMs(int ms);
     int retainMs() const { return retain_ms_; }
 
+    // 点的绘制半径（px）
+    void setPointRadius(double r);
+    double pointRadius() const { return point_radius_; }
+
 protected:
     void paintEvent(QPaintEvent* event) override;
 
@@ -46,6 +50,7 @@ private:
     std::shared_ptr<const Scan> latest_; // 最新一圈（retain = 0 时直接绘制）
     double range_mm_ = 10000.0;       // 视图半幅范围（mm）
     int retain_ms_ = 0;               // 点留存时间（ms）
+    double point_radius_ = 2.0;       // 点绘制半径（px）
 };
 
 } // namespace eai

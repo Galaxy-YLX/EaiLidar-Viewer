@@ -75,6 +75,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     retainSlider_->setToolTip(tr("点在屏幕上的留存时间"));
     retainLabel_ = new QLabel(tr("留存 0 ms"), this);
 
+    // 点大小调节：半径 1 ~ 8 px
+    sizeSlider_ = new QSlider(Qt::Horizontal, this);
+    sizeSlider_->setRange(1, 8);
+    sizeSlider_->setSingleStep(1);
+    sizeSlider_->setValue(2);
+    sizeSlider_->setFixedWidth(80);
+    sizeSlider_->setToolTip(tr("点的大小（半径 px）"));
+    sizeLabel_ = new QLabel(tr("点 2 px"), this);
+
     toolbar->addWidget(new QLabel(tr(" 端口 "), this));
     toolbar->addWidget(portCombo_);
     toolbar->addWidget(new QLabel(tr(" 波特率 "), this));
@@ -86,6 +95,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addSeparator();
     toolbar->addWidget(retainLabel_);
     toolbar->addWidget(retainSlider_);
+    toolbar->addWidget(sizeLabel_);
+    toolbar->addWidget(sizeSlider_);
 
     statusLabel_ = new QLabel(tr("未连接"), this);
     statusBar()->addWidget(statusLabel_);
@@ -99,6 +110,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     connect(retainSlider_, &QSlider::valueChanged, this, [this](int v) {
         view_->setRetainMs(v);
         retainLabel_->setText(tr("留存 %1 ms").arg(v));
+    });
+    connect(sizeSlider_, &QSlider::valueChanged, this, [this](int v) {
+        view_->setPointRadius(v);
+        sizeLabel_->setText(tr("点 %1 px").arg(v));
     });
 
     connect(transport_, &SerialTransport::scanReady, this, [this](const std::shared_ptr<Scan>& s) {

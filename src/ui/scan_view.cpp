@@ -57,6 +57,11 @@ void ScanView::setScan(const std::shared_ptr<const Scan>& scan) {
     update();
 }
 
+void ScanView::setPointRadius(double r) {
+    point_radius_ = std::max(0.5, r);
+    update();
+}
+
 void ScanView::setRetainMs(int ms) {
     const int prev = retain_ms_;
     retain_ms_ = std::max(0, ms);
@@ -134,10 +139,9 @@ void ScanView::paintEvent(QPaintEvent* event) {
         }
         p.setPen(Qt::NoPen);
         p.setBrush(kPointColor);
-        const double r_pt = 2.0;
         for (const auto& pt : latest_->points) {
             if (!pt.valid) continue;
-            p.drawEllipse(toScreen(pt.x_mm, pt.y_mm), r_pt, r_pt);
+            p.drawEllipse(toScreen(pt.x_mm, pt.y_mm), point_radius_, point_radius_);
         }
         return;
     }
@@ -153,7 +157,6 @@ void ScanView::paintEvent(QPaintEvent* event) {
 
     const qint64 now = clock_.msecsSinceReference();
     pruneExpired(now);
-    const double r_pt = 2.0;
     p.setPen(Qt::NoPen);
     for (const auto& tp : points_) {
         const double alpha = 1.0 - static_cast<double>(now - tp.stamp_ms) / retain_ms_;
@@ -161,7 +164,7 @@ void ScanView::paintEvent(QPaintEvent* event) {
         QColor c = kPointColor;
         c.setAlphaF(alpha);
         p.setBrush(c);
-        p.drawEllipse(toScreen(tp.x_mm, tp.y_mm), r_pt, r_pt);
+        p.drawEllipse(toScreen(tp.x_mm, tp.y_mm), point_radius_, point_radius_);
     }
 }
 

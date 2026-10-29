@@ -33,6 +33,8 @@ private:
     QPushButton* stopButton_ = nullptr;
     QSlider* retainSlider_ = nullptr;
     QLabel* retainLabel_ = nullptr;
+    QSlider* sizeSlider_ = nullptr;
+    QLabel* sizeLabel_ = nullptr;
     QLabel* statusLabel_ = nullptr;
 };
 
