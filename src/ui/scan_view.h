@@ -62,7 +62,7 @@ private:
     std::shared_ptr<const Scan> latest_; // 最新一圈（retain = 0 时直接绘制）
     double range_mm_ = 10000.0;       // 视图半幅范围（mm）
     int retain_ms_ = 0;               // 点留存时间（ms）
-    double point_radius_ = 2.0;       // 点绘制半径（px）
+    double point_radius_ = 1.0;       // 点绘制半径（px）
     int mirror_ = 0;                  // 镜像模式 0/1/2/3
     double rotation_deg_ = 0.0;       // 显示旋转角度（°）
 };

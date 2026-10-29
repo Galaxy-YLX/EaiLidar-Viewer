@@ -85,10 +85,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     sizeSlider_ = new QSlider(Qt::Horizontal, this);
     sizeSlider_->setRange(1, 8);
     sizeSlider_->setSingleStep(1);
-    sizeSlider_->setValue(2);
+    sizeSlider_->setValue(1);
     sizeSlider_->setFixedWidth(80);
     sizeSlider_->setToolTip(tr("点的大小（半径 px）"));
-    sizeLabel_ = new QLabel(tr("点 2 px"), this);
+    sizeLabel_ = new QLabel(tr("点 1 px"), this);
 
     // 量程选择：小范围探测可缩小到 1 m，标尺/网格步进自动变细；雷达最大量程 20 m
     rangeCombo_ = new QComboBox(this);
