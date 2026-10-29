@@ -57,8 +57,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     sideFont.setBold(true);
     powerOnButton_->setFont(sideFont);
     powerOffButton_->setFont(sideFont);
-    powerOnButton_->setFixedHeight(40);
-    powerOffButton_->setFixedHeight(40);
 
     // 点大小选择：下拉选项 0.5 / 1.0 / 1.5 / 2.0 px
     sizeCombo_ = new QComboBox(this);
@@ -76,7 +74,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     }
     rangeCombo_->setCurrentText(QStringLiteral("10 m"));
     rangeCombo_->setToolTip(tr("视图量程（半径），最大 20 m"));
-    rangeCombo_->setFixedHeight(40);
 
     // 镜像与旋转：适配雷达安装方位（正装/倒装/侧装）
     mirrorCombo_ = new QComboBox(this);
@@ -104,16 +101,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addWidget(rotationCombo_);
     toolbar->addWidget(sizeCombo_);
 
-    // 上边栏控件统一加大：所有框固定高 40px，与侧边一致
+    // 上边栏字号加大；控件高度由 QSS 统一控制（总高 40px）
     QFont barFont = toolbar->font();
     barFont.setPointSize(12);
     toolbar->setFont(barFont);
-    const auto barWidgets = toolbar->findChildren<QWidget*>();
-    for (QWidget* w : barWidgets) {
-        if (qobject_cast<QPushButton*>(w) || qobject_cast<QComboBox*>(w)) {
-            w->setFixedHeight(40);
-        }
-    }
 
     // 滤波设置：距离跳跃（默认开 10cm）/ 强度下限（默认关）
     jumpCheck_ = new QCheckBox(tr("距离跳跃"), this);
@@ -127,13 +118,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     intensitySpin_ = new QSpinBox(this);
     intensitySpin_->setRange(0, 255);
     intensitySpin_->setValue(20);
-    // 侧边所有框统一 40px 高（与开机/关机按键一致）
-    for (QWidget* w : {static_cast<QWidget*>(jumpCheck_),
-                       static_cast<QWidget*>(jumpSpin_),
-                       static_cast<QWidget*>(intensityCheck_),
-                       static_cast<QWidget*>(intensitySpin_)}) {
-        w->setFixedHeight(40);
-    }
 
     // 侧边控制面板：开机 / 关机 / 量程 / 滤波（无标题栏、无边框，固定停靠右侧）
     auto* controlDock = new QDockWidget(tr("控制"), this);

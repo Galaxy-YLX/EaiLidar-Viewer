@@ -56,8 +56,9 @@ QPushButton {
     border: 1px solid #00DC78;
     border-radius: 2px;
     padding: 4px 12px;
-    min-height: 40px;
-    max-height: 40px;
+    min-height: 30px;
+    max-height: 30px;
+    /* 总高 = 30 内容 + 4×2 内边距 + 1×2 边框 = 40px */
 }
 QPushButton:hover {
     background-color: #00DC78;
@@ -80,8 +81,9 @@ QCheckBox {
     border-radius: 2px;
     padding: 6px 10px;          /* 留出内边距，方块在框内 */
     outline: none;
-    min-height: 40px;
-    max-height: 40px;
+    min-height: 26px;
+    max-height: 26px;
+    /* 总高 = 26 内容 + 6×2 内边距 + 1×2 边框 = 40px */
 }
 QCheckBox::indicator {
     width: 16px;
@@ -105,8 +107,9 @@ QComboBox, QSpinBox, QDoubleSpinBox {
     border: 1px solid #00DC78;
     border-radius: 2px;
     padding: 2px 6px;
-    min-height: 40px;
-    max-height: 40px;
+    min-height: 34px;
+    max-height: 34px;
+    /* 总高 = 34 内容 + 2×2 内边距 + 1×2 边框 = 40px */
 }
 QComboBox:hover, QSpinBox:hover, QDoubleSpinBox:hover {
     border-color: #00DC78;
