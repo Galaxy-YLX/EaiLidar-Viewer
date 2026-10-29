@@ -6,6 +6,7 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
+#include <QSlider>
 #include <QStatusBar>
 #include <QToolBar>
 
@@ -64,6 +65,16 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     auto* refreshButton = new QPushButton(tr("刷新"), this);
     auto* demoButton = new QPushButton(tr("演示"), this);
 
+    // 点留存时间调节：0 = 只显示最新一圈，>0 = 历史点渐隐尾迹
+    retainSlider_ = new QSlider(Qt::Horizontal, this);
+    retainSlider_->setRange(0, 3000); // 0 ~ 3000 ms
+    retainSlider_->setSingleStep(100);
+    retainSlider_->setPageStep(500);
+    retainSlider_->setValue(0);
+    retainSlider_->setFixedWidth(120);
+    retainSlider_->setToolTip(tr("点在屏幕上的留存时间"));
+    retainLabel_ = new QLabel(tr("留存 0 ms"), this);
+
     toolbar->addWidget(new QLabel(tr(" 端口 "), this));
     toolbar->addWidget(portCombo_);
     toolbar->addWidget(new QLabel(tr(" 波特率 "), this));
@@ -72,6 +83,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addWidget(stopButton_);
     toolbar->addWidget(refreshButton);
     toolbar->addWidget(demoButton);
+    toolbar->addSeparator();
+    toolbar->addWidget(retainLabel_);
+    toolbar->addWidget(retainSlider_);
 
     statusLabel_ = new QLabel(tr("未连接"), this);
     statusBar()->addWidget(statusLabel_);
@@ -82,6 +96,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     connect(stopButton_, &QPushButton::clicked, this, &MainWindow::onStopClicked);
     connect(refreshButton, &QPushButton::clicked, this, &MainWindow::refreshPorts);
     connect(demoButton, &QPushButton::clicked, this, &MainWindow::loadDemoScan);
+    connect(retainSlider_, &QSlider::valueChanged, this, [this](int v) {
+        view_->setRetainMs(v);
+        retainLabel_->setText(tr("留存 %1 ms").arg(v));
+    });
 
     connect(transport_, &SerialTransport::scanReady, this, [this](const std::shared_ptr<Scan>& s) {
         view_->setScan(s);

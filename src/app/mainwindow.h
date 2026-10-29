@@ -5,6 +5,7 @@
 class QComboBox;
 class QLabel;
 class QPushButton;
+class QSlider;
 
 namespace eai {
 
@@ -30,6 +31,8 @@ private:
     QComboBox* baudCombo_ = nullptr;
     QPushButton* startButton_ = nullptr;
     QPushButton* stopButton_ = nullptr;
+    QSlider* retainSlider_ = nullptr;
+    QLabel* retainLabel_ = nullptr;
     QLabel* statusLabel_ = nullptr;
 };
 
