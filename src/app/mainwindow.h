@@ -6,7 +6,6 @@ class QComboBox;
 class QDoubleSpinBox;
 class QLabel;
 class QPushButton;
-class QSpinBox;
 
 namespace eai {
 
@@ -36,7 +35,6 @@ private:
     QPushButton* disconnectButton_ = nullptr;
     QPushButton* powerOnButton_ = nullptr;
     QPushButton* powerOffButton_ = nullptr;
-    QSpinBox* retainSpin_ = nullptr;
     QDoubleSpinBox* sizeSpin_ = nullptr;
     QComboBox* rangeCombo_ = nullptr;
     QComboBox* mirrorCombo_ = nullptr;

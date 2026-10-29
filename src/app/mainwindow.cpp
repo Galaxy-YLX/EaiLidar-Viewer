@@ -7,7 +7,6 @@
 #include <QDoubleSpinBox>
 #include <QLabel>
 #include <QPushButton>
-#include <QSpinBox>
 #include <QStatusBar>
 #include <QToolBar>
 
@@ -72,15 +71,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     powerOnButton_->setToolTip(tr("发送 A5 60 启动雷达"));
     powerOffButton_->setToolTip(tr("发送 A5 65 停止雷达"));
 
-    // 点留存时间调节：0 = 只显示最新一圈，>0 = 历史点渐隐尾迹；直接输入
-    retainSpin_ = new QSpinBox(this);
-    retainSpin_->setRange(0, 3000);
-    retainSpin_->setSingleStep(100);
-    retainSpin_->setValue(0);
-    retainSpin_->setSuffix(tr(" ms"));
-    retainSpin_->setFixedWidth(90);
-    retainSpin_->setToolTip(tr("点在屏幕上的留存时间"));
-
     // 点大小调节：半径 0.1 ~ 5.0 px，直接输入
     sizeSpin_ = new QDoubleSpinBox(this);
     sizeSpin_->setRange(0.1, 5.0);
@@ -129,7 +119,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addWidget(rangeCombo_);
     toolbar->addWidget(mirrorCombo_);
     toolbar->addWidget(rotationCombo_);
-    toolbar->addWidget(retainSpin_);
     toolbar->addWidget(sizeSpin_);
 
     statusLabel_ = new QLabel(tr("未连接"), this);
@@ -143,9 +132,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     connect(powerOffButton_, &QPushButton::clicked, this, &MainWindow::onPowerOffClicked);
     connect(refreshButton, &QPushButton::clicked, this, &MainWindow::refreshPorts);
     connect(demoButton, &QPushButton::clicked, this, &MainWindow::loadDemoScan);
-    connect(retainSpin_, &QSpinBox::valueChanged, this, [this](int v) {
-        view_->setRetainMs(v);
-    });
     connect(sizeSpin_, &QDoubleSpinBox::valueChanged, this, [this](double v) {
         view_->setPointRadius(v);
     });
