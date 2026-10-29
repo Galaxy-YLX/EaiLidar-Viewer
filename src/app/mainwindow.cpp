@@ -4,7 +4,6 @@
 
 #include <QComboBox>
 #include <QDockWidget>
-#include <QDoubleSpinBox>
 #include <QLabel>
 #include <QPushButton>
 #include <QStatusBar>
@@ -57,15 +56,13 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     powerOnButton_->setFixedHeight(40);
     powerOffButton_->setFixedHeight(40);
 
-    // 点大小调节：半径 0.1 ~ 5.0 px，直接输入
-    sizeSpin_ = new QDoubleSpinBox(this);
-    sizeSpin_->setRange(0.1, 5.0);
-    sizeSpin_->setSingleStep(0.1);
-    sizeSpin_->setDecimals(1);
-    sizeSpin_->setValue(1.0);
-    sizeSpin_->setSuffix(tr(" px"));
-    sizeSpin_->setFixedWidth(76);
-    sizeSpin_->setToolTip(tr("点的大小（半径 px）"));
+    // 点大小选择：下拉选项 0.5 / 1.0 / 1.5 / 2.0 px
+    sizeCombo_ = new QComboBox(this);
+    for (double r : {0.5, 1.0, 1.5, 2.0}) {
+        sizeCombo_->addItem(tr("%1 px").arg(r, 0, 'f', 1), r);
+    }
+    sizeCombo_->setCurrentIndex(0); // 默认 0.5 px
+    sizeCombo_->setToolTip(tr("点的大小（半径 px）"));
 
     // 量程选择：小范围探测可缩小到 1 m，标尺/网格步进自动变细；雷达最大量程 20 m
     rangeCombo_ = new QComboBox(this);
@@ -101,7 +98,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addSeparator();
     toolbar->addWidget(mirrorCombo_);
     toolbar->addWidget(rotationCombo_);
-    toolbar->addWidget(sizeSpin_);
+    toolbar->addWidget(sizeCombo_);
 
     // 上边栏控件统一加大：所有框固定高 40px，与侧边一致
     QFont barFont = toolbar->font();
@@ -109,8 +106,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->setFont(barFont);
     const auto barWidgets = toolbar->findChildren<QWidget*>();
     for (QWidget* w : barWidgets) {
-        if (qobject_cast<QPushButton*>(w) || qobject_cast<QComboBox*>(w) ||
-            qobject_cast<QDoubleSpinBox*>(w)) {
+        if (qobject_cast<QPushButton*>(w) || qobject_cast<QComboBox*>(w)) {
             w->setFixedHeight(40);
         }
     }
@@ -140,8 +136,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     connect(powerOnButton_, &QPushButton::clicked, this, &MainWindow::onPowerOnClicked);
     connect(powerOffButton_, &QPushButton::clicked, this, &MainWindow::onPowerOffClicked);
     connect(refreshButton, &QPushButton::clicked, this, &MainWindow::refreshPorts);
-    connect(sizeSpin_, &QDoubleSpinBox::valueChanged, this, [this](double v) {
-        view_->setPointRadius(v);
+    connect(sizeCombo_, &QComboBox::currentIndexChanged, this, [this](int) {
+        view_->setPointRadius(sizeCombo_->currentData().toDouble());
     });
     connect(rangeCombo_, &QComboBox::currentIndexChanged, this, [this](int) {
         view_->setRangeMm(rangeCombo_->currentData().toDouble());
@@ -152,6 +148,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     connect(rotationCombo_, &QComboBox::currentIndexChanged, this, [this](int) {
         view_->setRotationDeg(rotationCombo_->currentData().toDouble());
     });
+    // 默认：左右镜像 + 90° 旋转（信号已连接，会同步到视图）
+    mirrorCombo_->setCurrentIndex(1);
+    rotationCombo_->setCurrentIndex(1);
 
     connect(transport_, &SerialTransport::scanReady, this, [this](const std::shared_ptr<Scan>& s) {
         view_->setScan(s);

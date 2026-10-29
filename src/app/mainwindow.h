@@ -3,7 +3,6 @@
 #include <QMainWindow>
 
 class QComboBox;
-class QDoubleSpinBox;
 class QLabel;
 class QPushButton;
 
@@ -33,7 +32,7 @@ private:
     QPushButton* disconnectButton_ = nullptr;
     QPushButton* powerOnButton_ = nullptr;
     QPushButton* powerOffButton_ = nullptr;
-    QDoubleSpinBox* sizeSpin_ = nullptr;
+    QComboBox* sizeCombo_ = nullptr;
     QComboBox* rangeCombo_ = nullptr;
     QComboBox* mirrorCombo_ = nullptr;
     QComboBox* rotationCombo_ = nullptr;

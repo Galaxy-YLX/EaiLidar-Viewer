@@ -39,9 +39,9 @@ protected:
 private:
     std::shared_ptr<const Scan> scan_; // 最新一圈
     double range_mm_ = 10000.0;        // 视图半幅范围（mm）
-    double point_radius_ = 1.0;        // 点绘制半径（px）
-    int mirror_ = 0;                   // 镜像模式 0/1/2/3
-    double rotation_deg_ = 0.0;        // 显示旋转角度（°）
+    double point_radius_ = 0.5;        // 点绘制半径（px）
+    int mirror_ = 1;                   // 镜像模式 0/1/2/3，默认左右镜像
+    double rotation_deg_ = 90.0;       // 显示旋转角度（°），默认 90°
 };
 
 } // namespace eai
