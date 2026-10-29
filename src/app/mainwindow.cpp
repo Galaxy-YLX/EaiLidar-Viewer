@@ -58,7 +58,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     }
     baudCombo_->setCurrentText(QStringLiteral("115200"));
 
-    connectButton_ = new QPushButton(tr("连接"), this);
+    startButton_ = new QPushButton(tr("启动"), this);
+    stopButton_ = new QPushButton(tr("关闭"), this);
+    stopButton_->setEnabled(false);
     auto* refreshButton = new QPushButton(tr("刷新"), this);
     auto* demoButton = new QPushButton(tr("演示"), this);
 
@@ -66,7 +68,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addWidget(portCombo_);
     toolbar->addWidget(new QLabel(tr(" 波特率 "), this));
     toolbar->addWidget(baudCombo_);
-    toolbar->addWidget(connectButton_);
+    toolbar->addWidget(startButton_);
+    toolbar->addWidget(stopButton_);
     toolbar->addWidget(refreshButton);
     toolbar->addWidget(demoButton);
 
@@ -75,7 +78,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     refreshPorts();
 
-    connect(connectButton_, &QPushButton::clicked, this, &MainWindow::onConnectClicked);
+    connect(startButton_, &QPushButton::clicked, this, &MainWindow::onStartClicked);
+    connect(stopButton_, &QPushButton::clicked, this, &MainWindow::onStopClicked);
     connect(refreshButton, &QPushButton::clicked, this, &MainWindow::refreshPorts);
     connect(demoButton, &QPushButton::clicked, this, &MainWindow::loadDemoScan);
 
@@ -103,12 +107,8 @@ void MainWindow::refreshPorts() {
     }
 }
 
-void MainWindow::onConnectClicked() {
+void MainWindow::onStartClicked() {
     if (transport_->isOpen()) {
-        transport_->close();
-        connectButton_->setText(tr("连接"));
-        statusLabel_->setText(tr("已断开"));
-        view_->setScan(nullptr);
         return;
     }
 
@@ -119,11 +119,20 @@ void MainWindow::onConnectClicked() {
     }
     const int baud = baudCombo_->currentData().toInt();
     if (transport_->open(port, baud)) {
-        connectButton_->setText(tr("断开"));
+        startButton_->setEnabled(false);
+        stopButton_->setEnabled(true);
         statusLabel_->setText(tr("已连接 %1 @ %2").arg(port).arg(baud));
     } else {
         statusLabel_->setText(tr("打开失败：%1").arg(transport_->errorString()));
     }
+}
+
+void MainWindow::onStopClicked() {
+    transport_->close();
+    startButton_->setEnabled(true);
+    stopButton_->setEnabled(false);
+    statusLabel_->setText(tr("已断开"));
+    view_->setScan(nullptr);
 }
 
 void MainWindow::loadDemoScan() {

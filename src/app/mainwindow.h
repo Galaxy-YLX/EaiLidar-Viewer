@@ -17,7 +17,8 @@ public:
     explicit MainWindow(QWidget* parent = nullptr);
 
 private slots:
-    void onConnectClicked();
+    void onStartClicked();
+    void onStopClicked();
     void refreshPorts();
 
 private:
@@ -27,7 +28,8 @@ private:
     SerialTransport* transport_ = nullptr;
     QComboBox* portCombo_ = nullptr;
     QComboBox* baudCombo_ = nullptr;
-    QPushButton* connectButton_ = nullptr;
+    QPushButton* startButton_ = nullptr;
+    QPushButton* stopButton_ = nullptr;
     QLabel* statusLabel_ = nullptr;
 };
 
