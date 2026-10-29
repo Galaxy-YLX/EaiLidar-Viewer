@@ -48,6 +48,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     powerOnButton_->setToolTip(tr("发送 A5 60 启动雷达"));
     powerOffButton_->setToolTip(tr("发送 A5 65 停止雷达"));
 
+    // 侧边按键加大：大字号、大高度
+    QFont sideFont = powerOnButton_->font();
+    sideFont.setPointSize(16);
+    sideFont.setBold(true);
+    powerOnButton_->setFont(sideFont);
+    powerOffButton_->setFont(sideFont);
+    powerOnButton_->setFixedHeight(40);
+    powerOffButton_->setFixedHeight(40);
+
     // 点大小调节：半径 0.1 ~ 5.0 px，直接输入
     sizeSpin_ = new QDoubleSpinBox(this);
     sizeSpin_->setRange(0.1, 5.0);
@@ -66,6 +75,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     }
     rangeCombo_->setCurrentText(QStringLiteral("10 m"));
     rangeCombo_->setToolTip(tr("视图量程（半径），最大 20 m"));
+    rangeCombo_->setFixedHeight(40);
 
     // 镜像与旋转：适配雷达安装方位（正装/倒装/侧装）
     mirrorCombo_ = new QComboBox(this);
@@ -92,6 +102,18 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addWidget(mirrorCombo_);
     toolbar->addWidget(rotationCombo_);
     toolbar->addWidget(sizeSpin_);
+
+    // 上边栏控件统一加大：所有框固定高 40px，与侧边一致
+    QFont barFont = toolbar->font();
+    barFont.setPointSize(12);
+    toolbar->setFont(barFont);
+    const auto barWidgets = toolbar->findChildren<QWidget*>();
+    for (QWidget* w : barWidgets) {
+        if (qobject_cast<QPushButton*>(w) || qobject_cast<QComboBox*>(w) ||
+            qobject_cast<QDoubleSpinBox*>(w)) {
+            w->setFixedHeight(40);
+        }
+    }
 
     // 侧边控制面板：开机 / 关机 / 量程（无标题栏、无边框，固定停靠右侧）
     auto* controlDock = new QDockWidget(tr("控制"), this);
