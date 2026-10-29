@@ -3,11 +3,13 @@
 #include <memory>
 
 #include <QComboBox>
+#include <QDockWidget>
 #include <QDoubleSpinBox>
 #include <QLabel>
 #include <QPushButton>
 #include <QStatusBar>
 #include <QToolBar>
+#include <QVBoxLayout>
 
 #include "core/scan.h"
 #include "transport/serial_transport.h"
@@ -86,14 +88,24 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addWidget(refreshButton);
     toolbar->addWidget(connectButton_);
     toolbar->addWidget(disconnectButton_);
-    toolbar->addWidget(powerOnButton_);
-    toolbar->addWidget(powerOffButton_);
     toolbar->addSeparator();
-    toolbar->addWidget(new QLabel(tr(" 量程 "), this));
-    toolbar->addWidget(rangeCombo_);
     toolbar->addWidget(mirrorCombo_);
     toolbar->addWidget(rotationCombo_);
     toolbar->addWidget(sizeSpin_);
+
+    // 侧边控制面板：开机 / 关机 / 量程
+    auto* controlDock = new QDockWidget(tr("控制"), this);
+    controlDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    auto* dockWidget = new QWidget(controlDock);
+    auto* dockLayout = new QVBoxLayout(dockWidget);
+    dockLayout->addWidget(powerOnButton_);
+    dockLayout->addWidget(powerOffButton_);
+    dockLayout->addSpacing(8);
+    dockLayout->addWidget(new QLabel(tr("量程"), dockWidget));
+    dockLayout->addWidget(rangeCombo_);
+    dockLayout->addStretch(1);
+    controlDock->setWidget(dockWidget);
+    addDockWidget(Qt::RightDockWidgetArea, controlDock);
 
     statusLabel_ = new QLabel(tr("未连接"), this);
     statusBar()->addWidget(statusLabel_);
