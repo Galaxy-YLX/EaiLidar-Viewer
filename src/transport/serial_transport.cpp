@@ -10,6 +10,11 @@ namespace {
 // 起始帧偶发丢失时的安全上限：防止 pending_ 无限增长。
 constexpr std::size_t kMaxPointsPerRotation = 1000;
 
+// 雷达控制命令帧（实测）：开机 A5 60，关机 A5 65。
+// 注：与数据帧头 AA 55 不同，命令帧头是 A5。
+const QByteArray kPowerOnCmd("\xA5\x60", 2);
+const QByteArray kPowerOffCmd("\xA5\x65", 2);
+
 } // namespace
 
 SerialTransport::SerialTransport(QObject* parent)
@@ -69,6 +74,16 @@ bool SerialTransport::isOpen() const {
 
 QString SerialTransport::errorString() const {
     return serial_.errorString();
+}
+
+bool SerialTransport::powerOn() {
+    if (!serial_.isOpen()) return false;
+    return serial_.write(kPowerOnCmd) == kPowerOnCmd.size();
+}
+
+bool SerialTransport::powerOff() {
+    if (!serial_.isOpen()) return false;
+    return serial_.write(kPowerOffCmd) == kPowerOffCmd.size();
 }
 
 void SerialTransport::onReadyRead() {

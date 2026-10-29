@@ -30,6 +30,10 @@ public:
     bool isOpen() const;
     QString errorString() const;
 
+    // 雷达开机/关机命令帧（需串口已打开），返回是否发送成功。
+    bool powerOn();
+    bool powerOff();
+
 signals:
     void scanReady(const std::shared_ptr<eai::Scan>& scan);
     void frameError(const QString& message);

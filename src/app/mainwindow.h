@@ -18,8 +18,10 @@ public:
     explicit MainWindow(QWidget* parent = nullptr);
 
 private slots:
-    void onStartClicked();
-    void onStopClicked();
+    void onConnectClicked();
+    void onDisconnectClicked();
+    void onPowerOnClicked();
+    void onPowerOffClicked();
     void refreshPorts();
 
 private:
@@ -29,8 +31,10 @@ private:
     SerialTransport* transport_ = nullptr;
     QComboBox* portCombo_ = nullptr;
     QComboBox* baudCombo_ = nullptr;
-    QPushButton* startButton_ = nullptr;
-    QPushButton* stopButton_ = nullptr;
+    QPushButton* connectButton_ = nullptr;
+    QPushButton* disconnectButton_ = nullptr;
+    QPushButton* powerOnButton_ = nullptr;
+    QPushButton* powerOffButton_ = nullptr;
     QSlider* retainSlider_ = nullptr;
     QLabel* retainLabel_ = nullptr;
     QSlider* sizeSlider_ = nullptr;

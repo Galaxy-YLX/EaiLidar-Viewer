@@ -59,11 +59,17 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     }
     baudCombo_->setCurrentText(QStringLiteral("115200"));
 
-    startButton_ = new QPushButton(tr("启动"), this);
-    stopButton_ = new QPushButton(tr("关闭"), this);
-    stopButton_->setEnabled(false);
+    connectButton_ = new QPushButton(tr("连接"), this);
+    disconnectButton_ = new QPushButton(tr("断开"), this);
+    disconnectButton_->setEnabled(false);
     auto* refreshButton = new QPushButton(tr("刷新"), this);
     auto* demoButton = new QPushButton(tr("演示"), this);
+    powerOnButton_ = new QPushButton(tr("开机"), this);
+    powerOffButton_ = new QPushButton(tr("关机"), this);
+    powerOnButton_->setEnabled(false);
+    powerOffButton_->setEnabled(false);
+    powerOnButton_->setToolTip(tr("发送 A5 60 启动雷达"));
+    powerOffButton_->setToolTip(tr("发送 A5 65 停止雷达"));
 
     // 点留存时间调节：0 = 只显示最新一圈，>0 = 历史点渐隐尾迹
     retainSlider_ = new QSlider(Qt::Horizontal, this);
@@ -97,10 +103,12 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addWidget(portCombo_);
     toolbar->addWidget(new QLabel(tr(" 波特率 "), this));
     toolbar->addWidget(baudCombo_);
-    toolbar->addWidget(startButton_);
-    toolbar->addWidget(stopButton_);
+    toolbar->addWidget(connectButton_);
+    toolbar->addWidget(disconnectButton_);
     toolbar->addWidget(refreshButton);
     toolbar->addWidget(demoButton);
+    toolbar->addWidget(powerOnButton_);
+    toolbar->addWidget(powerOffButton_);
     toolbar->addSeparator();
     toolbar->addWidget(new QLabel(tr(" 量程 "), this));
     toolbar->addWidget(rangeCombo_);
@@ -114,8 +122,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     refreshPorts();
 
-    connect(startButton_, &QPushButton::clicked, this, &MainWindow::onStartClicked);
-    connect(stopButton_, &QPushButton::clicked, this, &MainWindow::onStopClicked);
+    connect(connectButton_, &QPushButton::clicked, this, &MainWindow::onConnectClicked);
+    connect(disconnectButton_, &QPushButton::clicked, this, &MainWindow::onDisconnectClicked);
+    connect(powerOnButton_, &QPushButton::clicked, this, &MainWindow::onPowerOnClicked);
+    connect(powerOffButton_, &QPushButton::clicked, this, &MainWindow::onPowerOffClicked);
     connect(refreshButton, &QPushButton::clicked, this, &MainWindow::refreshPorts);
     connect(demoButton, &QPushButton::clicked, this, &MainWindow::loadDemoScan);
     connect(retainSlider_, &QSlider::valueChanged, this, [this](int v) {
@@ -154,7 +164,7 @@ void MainWindow::refreshPorts() {
     }
 }
 
-void MainWindow::onStartClicked() {
+void MainWindow::onConnectClicked() {
     if (transport_->isOpen()) {
         return;
     }
@@ -166,20 +176,56 @@ void MainWindow::onStartClicked() {
     }
     const int baud = baudCombo_->currentData().toInt();
     if (transport_->open(port, baud)) {
-        startButton_->setEnabled(false);
-        stopButton_->setEnabled(true);
+        connectButton_->setEnabled(false);
+        disconnectButton_->setEnabled(true);
+        powerOnButton_->setEnabled(true);
+        powerOffButton_->setEnabled(false);
         statusLabel_->setText(tr("已连接 %1 @ %2").arg(port).arg(baud));
     } else {
         statusLabel_->setText(tr("打开失败：%1").arg(transport_->errorString()));
     }
 }
 
-void MainWindow::onStopClicked() {
+void MainWindow::onDisconnectClicked() {
+    // 雷达仍开机时先发关机命令再断串口（仿参考软件：停止测试先停雷达）
+    if (powerOffButton_->isEnabled()) {
+        transport_->powerOff();
+    }
     transport_->close();
-    startButton_->setEnabled(true);
-    stopButton_->setEnabled(false);
+    connectButton_->setEnabled(true);
+    disconnectButton_->setEnabled(false);
+    powerOnButton_->setEnabled(false);
+    powerOffButton_->setEnabled(false);
     statusLabel_->setText(tr("已断开"));
     view_->setScan(nullptr);
+}
+
+void MainWindow::onPowerOnClicked() {
+    if (!transport_->isOpen()) {
+        statusLabel_->setText(tr("请先连接串口"));
+        return;
+    }
+    if (transport_->powerOn()) {
+        powerOnButton_->setEnabled(false);
+        powerOffButton_->setEnabled(true);
+        statusLabel_->setText(tr("雷达已开机"));
+    } else {
+        statusLabel_->setText(tr("开机命令发送失败"));
+    }
+}
+
+void MainWindow::onPowerOffClicked() {
+    if (!transport_->isOpen()) {
+        statusLabel_->setText(tr("请先连接串口"));
+        return;
+    }
+    if (transport_->powerOff()) {
+        powerOnButton_->setEnabled(true);
+        powerOffButton_->setEnabled(false);
+        statusLabel_->setText(tr("雷达已关机"));
+    } else {
+        statusLabel_->setText(tr("关机命令发送失败"));
+    }
 }
 
 void MainWindow::loadDemoScan() {
