@@ -8,6 +8,7 @@ struct Point {
     double distance_mm = 0.0; // 距离（mm）
     double x_mm = 0.0;        // 直角坐标 X
     double y_mm = 0.0;        // 直角坐标 Y
+    int intensity = 0;        // 信号强度（0-255）
     bool valid = false;       // 距离 > 0 且未被干扰标志标记
 };
 

@@ -21,6 +21,13 @@ double angleCorrection(double distance_mm) {
 
 } // namespace
 
+bool verifyChecksum(const std::uint8_t* data, std::size_t len) {
+    if (data == nullptr || len == 0) return false;
+    std::uint8_t x = 0;
+    for (std::size_t i = 0; i < len; ++i) x ^= data[i];
+    return x == 0;
+}
+
 FrameType parseFrame(const std::uint8_t* data, std::size_t len,
                      Scan& scan, bool secondLevelCorrect) {
     scan = Scan{};
@@ -31,10 +38,11 @@ FrameType parseFrame(const std::uint8_t* data, std::size_t len,
     const std::uint8_t lsn = data[3];
     if (len < frameLength(lsn)) return FrameType::Invalid;
 
+    // 整帧异或校验
+    if (!verifyChecksum(data, frameLength(lsn))) return FrameType::Invalid;
+
     const std::uint16_t fsa = readU16(data + 4);
     const std::uint16_t lsa = readU16(data + 6);
-    // const std::uint16_t cs = readU16(data + 8);
-    // TODO: CS 校验码为双字节异或，精确字节范围需用真实数据流确认后再启用校验。
 
     // 起始数据包：LSN = 1，CT[bit7:1] 承载扫描频率
     if (ct & 0x01u) {
@@ -53,9 +61,12 @@ FrameType parseFrame(const std::uint8_t* data, std::size_t len,
     scan.points.reserve(lsn);
 
     for (std::size_t i = 0; i < lsn; ++i) {
-        const std::uint16_t si = readU16(data + 10 + 2 * i);
+        const std::uint8_t* s = data + 10 + 3 * i;
         Point pt;
-        pt.distance_mm = si / 4.0; // 距离（mm）；Si 的 bit0 为干扰标志
+        pt.intensity = s[0];
+        const std::uint16_t si = static_cast<std::uint16_t>(s[1]) |
+                                 (static_cast<std::uint16_t>(s[2]) << 8);
+        pt.distance_mm = si / 4.0; // 距离（mm）；距离字段低 bit 为干扰标志
         pt.valid = pt.distance_mm > 0.0;
 
         // 一级角度：首点取 a0，其余在 [a0, a1] 间线性插值

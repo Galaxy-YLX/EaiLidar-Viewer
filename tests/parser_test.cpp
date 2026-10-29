@@ -1,6 +1,8 @@
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <string>
 #include <vector>
 
 #include "protocol/frame_assembler.h"
@@ -24,12 +26,32 @@ bool near(double a, double b, double eps = 1e-3) {
     return std::fabs(a - b) < eps;
 }
 
-// 构造一帧：PH(2) + CT + LSN + FSA + LSA + CS + S1..S_LSN
-std::vector<std::uint8_t> makeScanFrame(std::uint8_t ct, std::uint8_t lsn,
-                                        std::uint16_t fsa, std::uint16_t lsa,
-                                        const std::vector<std::uint16_t>& samples) {
+// 从十六进制字符串构造字节（空格分隔）
+std::vector<std::uint8_t> hexBytes(const std::string& hex) {
+    auto nib = [](char c) -> int {
+        if (c >= '0' && c <= '9') return c - '0';
+        if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+        if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+        return -1;
+    };
+    std::vector<std::uint8_t> out;
+    for (std::size_t i = 0; i + 1 < hex.size(); ++i) {
+        if (hex[i] == ' ') continue;
+        const int hi = nib(hex[i]);
+        const int lo = nib(hex[i + 1]);
+        out.push_back(static_cast<std::uint8_t>((hi << 4) | lo));
+        ++i;
+    }
+    return out;
+}
+
+// 构造一帧：PH(2) + CT + LSN + FSA + LSA + CS(2) + 3×LSN 采样（强度 + 距离低 + 距离高）。
+// CS 自动计算，使整帧异或 == 0。
+std::vector<std::uint8_t> makeFrame(std::uint8_t ct, std::uint8_t lsn,
+                                    std::uint16_t fsa, std::uint16_t lsa,
+                                    const std::vector<std::array<std::uint8_t, 3>>& samples) {
     std::vector<std::uint8_t> buf;
-    buf.push_back(0xA5);
+    buf.push_back(0xAA);
     buf.push_back(0x55);
     buf.push_back(ct);
     buf.push_back(lsn);
@@ -37,12 +59,17 @@ std::vector<std::uint8_t> makeScanFrame(std::uint8_t ct, std::uint8_t lsn,
     buf.push_back(static_cast<std::uint8_t>(fsa >> 8));
     buf.push_back(static_cast<std::uint8_t>(lsa & 0xFF));
     buf.push_back(static_cast<std::uint8_t>(lsa >> 8));
-    buf.push_back(0); // CS 低字节
-    buf.push_back(0); // CS 高字节
-    for (std::uint16_t s : samples) {
-        buf.push_back(static_cast<std::uint8_t>(s & 0xFF));
-        buf.push_back(static_cast<std::uint8_t>(s >> 8));
+    buf.push_back(0); // CS 低字节占位
+    buf.push_back(0); // CS 高字节占位
+    for (const auto& s : samples) {
+        buf.push_back(s[0]);
+        buf.push_back(s[1]);
+        buf.push_back(s[2]);
     }
+    std::uint8_t x = 0;
+    for (std::uint8_t b : buf) x ^= b;
+    buf[8] = x; // 使整帧异或 == 0
+    buf[9] = 0;
     return buf;
 }
 
@@ -51,65 +78,66 @@ std::vector<std::uint8_t> makeScanFrame(std::uint8_t ct, std::uint8_t lsn,
 int main() {
     using namespace eai;
 
+    // 0. 帧长
+    CHECK(frameLength(8) == 34, "frameLength(8) should be 34, got %zu", frameLength(8));
+    CHECK(frameLength(1) == 13, "frameLength(1) should be 13, got %zu", frameLength(1));
+
     // 1. 帧头错误
     {
         Scan scan;
-        std::uint8_t bad[] = {0x00, 0x55, 0, 0, 0, 0, 0, 0, 0, 0};
+        std::uint8_t bad[] = {0x00, 0x55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         CHECK(parseFrame(bad, sizeof(bad), scan) == FrameType::Invalid,
               "bad header should be Invalid");
     }
 
-    // 2. 起始数据包：CT=0x15 → bit0=1, bit7:1=0b1010=10 → 1.0 Hz
+    // 2. 真实帧 #0（来自实测数据流）
     {
-        std::vector<std::uint8_t> buf = makeScanFrame(0x15, 1, 0, 0, {0});
+        auto fr = hexBytes("AA 55 00 08 F9 57 6D 5B E3 51 BF D4 08 41 00 09 "
+                           "15 E4 70 15 9C 71 1C 08 30 32 0C 30 32 C0 2F 2F 78 2F");
+        CHECK(verifyChecksum(fr.data(), fr.size()), "real frame checksum should pass");
+
+        Scan scan;
+        CHECK(parseFrame(fr.data(), fr.size(), scan) == FrameType::Scan,
+              "real frame should be Scan");
+        CHECK(scan.points.size() == 8, "8 points, got %zu", scan.points.size());
+        // FSA = 0x57F9 >> 1 / 64 = 175.9375
+        CHECK(near(scan.fsa_deg, 175.9375, 1e-3), "FSA ~= 175.9375, got %.5f", scan.fsa_deg);
+        // LSA = 0x5B6D >> 1 / 64 = 182.84375
+        CHECK(near(scan.lsa_deg, 182.84375, 1e-3), "LSA ~= 182.84375, got %.5f", scan.lsa_deg);
+
+        CHECK(scan.points[0].intensity == 191, "S0 intensity 191, got %d", scan.points[0].intensity);
+        CHECK(near(scan.points[0].distance_mm, 565.0), "S0 dist 565, got %.2f",
+              scan.points[0].distance_mm);
+        CHECK(scan.points[2].intensity == 21, "S2 intensity 21, got %d", scan.points[2].intensity);
+        CHECK(near(scan.points[2].distance_mm, 7225.0), "S2 dist 7225, got %.2f",
+              scan.points[2].distance_mm);
+        CHECK(near(scan.points[7].distance_mm, 3038.0), "S7 dist 3038, got %.2f",
+              scan.points[7].distance_mm);
+    }
+
+    // 3. 起始数据包：CT=0x8D → (0x8D>>1)/10 = 7.0 Hz
+    {
+        auto buf = makeFrame(0x8D, 1, 0, 0, {{{0, 0, 0}}});
         Scan scan;
         CHECK(parseFrame(buf.data(), buf.size(), scan) == FrameType::Start,
-              "CT=0x15 should be Start");
-        CHECK(near(scan.scan_freq_hz, 1.0), "freq should be 1.0, got %.4f", scan.scan_freq_hz);
+              "CT=0x8D should be Start");
+        CHECK(near(scan.scan_freq_hz, 7.0), "freq should be 7.0, got %.3f", scan.scan_freq_hz);
     }
 
-    // 3. 点云帧头解析（协议.md 算例）：LSN=40, FSA=0x6FE5, LSA=0x79ED
+    // 4. 校验失败
     {
-        std::vector<std::uint16_t> samples(40, 0x1000);
-        std::vector<std::uint8_t> buf = makeScanFrame(0x00, 40, 0x6FE5, 0x79ED, samples);
+        auto fr = hexBytes("AA 55 00 08 F9 57 6D 5B E3 51 BF D4 08 41 00 09 "
+                           "15 E4 70 15 9C 71 1C 08 30 32 0C 30 32 C0 2F 2F 78 2F");
+        fr[10] ^= 0xFF; // 破坏一个字节
         Scan scan;
-        CHECK(parseFrame(buf.data(), buf.size(), scan) == FrameType::Scan,
-              "should be Scan");
-        CHECK(scan.points.size() == 40, "points should be 40, got %zu", scan.points.size());
-        // FSA = (0x6FE5 >> 1) / 64 = 14322 / 64 = 223.78125
-        CHECK(near(scan.fsa_deg, 223.78125), "FSA should be 223.78125, got %.5f", scan.fsa_deg);
-        // LSA = (0x79ED >> 1) / 64 = 15606 / 64 = 243.84375（协议.md 原文 243.47 系笔误）
-        CHECK(near(scan.lsa_deg, 243.84375), "LSA should be 243.84375, got %.5f", scan.lsa_deg);
+        CHECK(parseFrame(fr.data(), fr.size(), scan) == FrameType::Invalid,
+              "corrupted checksum should be Invalid");
     }
 
-    // 4. 距离解算：Si = 0x6FE5 → 7161.25 mm
+    // 5. 组帧器：垃圾字节 + 分片喂入，应恰好输出一帧
     {
-        std::vector<std::uint8_t> buf = makeScanFrame(0x00, 1, 0, 0, {0x6FE5});
-        Scan scan;
-        parseFrame(buf.data(), buf.size(), scan);
-        CHECK(near(scan.points[0].distance_mm, 7161.25),
-              "distance should be 7161.25, got %.4f", scan.points[0].distance_mm);
-    }
-
-    // 5. 二级角度修正：d=1000 → -6.7622°, d=8000 → -7.8374°
-    {
-        std::vector<std::uint8_t> buf = makeScanFrame(
-            0x00, 2, 0, 0, {static_cast<std::uint16_t>(1000 * 4),
-                            static_cast<std::uint16_t>(8000 * 4)});
-        Scan scan;
-        parseFrame(buf.data(), buf.size(), scan);
-        CHECK(near(scan.points[0].distance_mm, 1000.0), "d0 should be 1000");
-        CHECK(near(scan.points[1].distance_mm, 8000.0), "d1 should be 8000");
-        // FSA=LSA=0，一级角度为 0，故 point.angle_deg 即修正值本身
-        CHECK(near(scan.points[0].angle_deg, -6.7622, 1e-3),
-              "corr(1000) should be -6.7622, got %.4f", scan.points[0].angle_deg);
-        CHECK(near(scan.points[1].angle_deg, -7.8374, 1e-3),
-              "corr(8000) should be -7.8374, got %.4f", scan.points[1].angle_deg);
-    }
-
-    // 6. 组帧器：垃圾字节 + 分片喂入，应恰好输出一帧并重同步
-    {
-        std::vector<std::uint8_t> frame = makeScanFrame(0x00, 1, 0, 0, {0x6FE5});
+        auto frame = hexBytes("AA 55 00 08 F9 57 6D 5B E3 51 BF D4 08 41 00 09 "
+                              "15 E4 70 15 9C 71 1C 08 30 32 0C 30 32 C0 2F 2F 78 2F");
         std::vector<std::uint8_t> full;
         full.push_back(0xFF);
         full.push_back(0xEE); // 垃圾字节
@@ -120,12 +148,13 @@ int main() {
         FrameAssembler assembler([&](const std::uint8_t* d, std::size_t len) {
             ++count;
             lastLen = len;
-            CHECK(d[0] == 0xA5 && d[1] == 0x55, "assembler emitted wrong header");
+            CHECK(d[0] == 0xAA && d[1] == 0x55, "assembler emitted wrong header");
         });
-        assembler.push(full.data(), 3);                      // FF EE A5
-        assembler.push(full.data() + 3, full.size() - 3);    // 55 + 帧剩余
+        assembler.push(full.data(), 3);                   // FF EE AA
+        assembler.push(full.data() + 3, full.size() - 3); // 55 + 帧剩余
         CHECK(count == 1, "should emit exactly 1 frame, got %d", count);
-        CHECK(lastLen == frame.size(), "frame len should be %zu, got %zu", frame.size(), lastLen);
+        CHECK(lastLen == frame.size(), "frame len should be %zu, got %zu",
+              frame.size(), lastLen);
     }
 
     if (g_failures == 0) {
