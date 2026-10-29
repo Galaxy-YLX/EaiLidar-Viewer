@@ -84,6 +84,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     sizeSlider_->setToolTip(tr("点的大小（半径 px）"));
     sizeLabel_ = new QLabel(tr("点 2 px"), this);
 
+    // 量程选择：小范围探测可缩小到 1 m，标尺/网格步进自动变细；雷达最大量程 20 m
+    rangeCombo_ = new QComboBox(this);
+    const int ranges_m[] = {1, 2, 5, 10, 20};
+    for (int m : ranges_m) {
+        rangeCombo_->addItem(tr("%1 m").arg(m), m * 1000.0);
+    }
+    rangeCombo_->setCurrentText(QStringLiteral("10 m"));
+    rangeCombo_->setToolTip(tr("视图量程（半径），最大 20 m"));
+
     toolbar->addWidget(new QLabel(tr(" 端口 "), this));
     toolbar->addWidget(portCombo_);
     toolbar->addWidget(new QLabel(tr(" 波特率 "), this));
@@ -93,6 +102,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addWidget(refreshButton);
     toolbar->addWidget(demoButton);
     toolbar->addSeparator();
+    toolbar->addWidget(new QLabel(tr(" 量程 "), this));
+    toolbar->addWidget(rangeCombo_);
     toolbar->addWidget(retainLabel_);
     toolbar->addWidget(retainSlider_);
     toolbar->addWidget(sizeLabel_);
@@ -114,6 +125,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     connect(sizeSlider_, &QSlider::valueChanged, this, [this](int v) {
         view_->setPointRadius(v);
         sizeLabel_->setText(tr("点 %1 px").arg(v));
+    });
+    connect(rangeCombo_, &QComboBox::currentIndexChanged, this, [this](int) {
+        view_->setRangeMm(rangeCombo_->currentData().toDouble());
     });
 
     connect(transport_, &SerialTransport::scanReady, this, [this](const std::shared_ptr<Scan>& s) {

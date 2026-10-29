@@ -35,6 +35,7 @@ private:
     QLabel* retainLabel_ = nullptr;
     QSlider* sizeSlider_ = nullptr;
     QLabel* sizeLabel_ = nullptr;
+    QComboBox* rangeCombo_ = nullptr;
     QLabel* statusLabel_ = nullptr;
 };
 

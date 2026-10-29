@@ -29,6 +29,10 @@ public:
     void setPointRadius(double r);
     double pointRadius() const { return point_radius_; }
 
+    // 视图半幅范围（mm）：网格、标尺随量程缩放
+    void setRangeMm(double range_mm);
+    double rangeMm() const { return range_mm_; }
+
 protected:
     void paintEvent(QPaintEvent* event) override;
 
