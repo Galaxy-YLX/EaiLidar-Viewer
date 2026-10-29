@@ -99,6 +99,20 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     rangeCombo_->setCurrentText(QStringLiteral("10 m"));
     rangeCombo_->setToolTip(tr("视图量程（半径），最大 20 m"));
 
+    // 镜像与旋转：适配雷达安装方位（正装/倒装/侧装）
+    mirrorCombo_ = new QComboBox(this);
+    mirrorCombo_->addItem(tr("无镜像"), 0);
+    mirrorCombo_->addItem(tr("左右镜像"), 1);
+    mirrorCombo_->addItem(tr("上下镜像"), 2);
+    mirrorCombo_->addItem(tr("双向镜像"), 3);
+    mirrorCombo_->setToolTip(tr("点云镜像显示"));
+
+    rotationCombo_ = new QComboBox(this);
+    for (int deg : {0, 90, 180, 270}) {
+        rotationCombo_->addItem(tr("%1°").arg(deg), deg);
+    }
+    rotationCombo_->setToolTip(tr("点云旋转显示"));
+
     toolbar->addWidget(new QLabel(tr(" 端口 "), this));
     toolbar->addWidget(portCombo_);
     toolbar->addWidget(new QLabel(tr(" 波特率 "), this));
@@ -112,6 +126,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addSeparator();
     toolbar->addWidget(new QLabel(tr(" 量程 "), this));
     toolbar->addWidget(rangeCombo_);
+    toolbar->addWidget(mirrorCombo_);
+    toolbar->addWidget(rotationCombo_);
     toolbar->addWidget(retainLabel_);
     toolbar->addWidget(retainSlider_);
     toolbar->addWidget(sizeLabel_);
@@ -138,6 +154,12 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     });
     connect(rangeCombo_, &QComboBox::currentIndexChanged, this, [this](int) {
         view_->setRangeMm(rangeCombo_->currentData().toDouble());
+    });
+    connect(mirrorCombo_, &QComboBox::currentIndexChanged, this, [this](int) {
+        view_->setMirror(mirrorCombo_->currentData().toInt());
+    });
+    connect(rotationCombo_, &QComboBox::currentIndexChanged, this, [this](int) {
+        view_->setRotationDeg(rotationCombo_->currentData().toDouble());
     });
 
     connect(transport_, &SerialTransport::scanReady, this, [this](const std::shared_ptr<Scan>& s) {

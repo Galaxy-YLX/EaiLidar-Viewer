@@ -19,6 +19,8 @@ const QColor kPointColor(0, 220, 120);
 // 扫描频率未知（起始帧未到）时，按 7 Hz 假设一圈周期，仅影响尾迹时间展开精度。
 constexpr double kDefaultPeriodMs = 1000.0 / 7.0;
 
+constexpr double kPi = 3.14159265358979323846;
+
 // 按量程选择网格/标尺步进（mm），使屏幕上始终有 5~10 条刻度，
 // 小量程自动变细（如 1 m 量程 → 0.1 m 步进）。
 double niceStep(double range_mm) {
@@ -81,6 +83,16 @@ void ScanView::setRangeMm(double range_mm) {
     update();
 }
 
+void ScanView::setMirror(int mode) {
+    mirror_ = mode & 3; // 0/1/2/3
+    update();
+}
+
+void ScanView::setRotationDeg(double deg) {
+    rotation_deg_ = deg;
+    update();
+}
+
 void ScanView::setRetainMs(int ms) {
     const int prev = retain_ms_;
     retain_ms_ = std::max(0, ms);
@@ -135,9 +147,19 @@ void ScanView::paintEvent(QPaintEvent* event) {
     const double cy = height() / 2.0;
     const double scale = std::min(width(), height()) / (2.0 * range_mm_);
 
-    // 世界坐标 (mm) → 屏幕坐标（雷达居中，y 轴向上为正，屏幕 y 向下）
+    // 世界坐标 (mm) → 屏幕坐标（雷达居中，y 轴向上为正，屏幕 y 向下）。
+    // 先镜像、再旋转（数学正方向 = 屏幕顺时针），用于适配雷达安装方位。
+    const double rot = rotation_deg_ * kPi / 180.0;
+    const double cosR = std::cos(rot);
+    const double sinR = std::sin(rot);
     auto toScreen = [&](double x_mm, double y_mm) {
-        return QPointF(cx + x_mm * scale, cy - y_mm * scale);
+        double wx = x_mm;
+        double wy = y_mm;
+        if (mirror_ & 1) wx = -wx; // 左右镜像
+        if (mirror_ & 2) wy = -wy; // 上下镜像
+        const double rx = wx * cosR - wy * sinR;
+        const double ry = wx * sinR + wy * cosR;
+        return QPointF(cx + rx * scale, cy - ry * scale);
     };
 
     // 距离网格（步进随量程自适应）

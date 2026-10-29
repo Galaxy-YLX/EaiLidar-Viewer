@@ -40,6 +40,8 @@ private:
     QSlider* sizeSlider_ = nullptr;
     QLabel* sizeLabel_ = nullptr;
     QComboBox* rangeCombo_ = nullptr;
+    QComboBox* mirrorCombo_ = nullptr;
+    QComboBox* rotationCombo_ = nullptr;
     QLabel* statusLabel_ = nullptr;
 };
 

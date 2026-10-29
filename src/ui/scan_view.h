@@ -33,6 +33,14 @@ public:
     void setRangeMm(double range_mm);
     double rangeMm() const { return range_mm_; }
 
+    // 镜像模式：0=无 1=左右(X翻转) 2=上下(Y翻转) 3=双向
+    void setMirror(int mode);
+    int mirror() const { return mirror_; }
+
+    // 点云绕中心旋转（°），用于适配雷达安装方位
+    void setRotationDeg(double deg);
+    double rotationDeg() const { return rotation_deg_; }
+
 protected:
     void paintEvent(QPaintEvent* event) override;
 
@@ -55,6 +63,8 @@ private:
     double range_mm_ = 10000.0;       // 视图半幅范围（mm）
     int retain_ms_ = 0;               // 点留存时间（ms）
     double point_radius_ = 2.0;       // 点绘制半径（px）
+    int mirror_ = 0;                  // 镜像模式 0/1/2/3
+    double rotation_deg_ = 0.0;       // 显示旋转角度（°）
 };
 
 } // namespace eai
