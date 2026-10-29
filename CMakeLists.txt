@@ -24,24 +24,16 @@ add_test(NAME parser_tests COMMAND parser_tests)
 # ---------------------------------------------------------------------------
 # Qt 上位机应用
 # ---------------------------------------------------------------------------
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets SerialPort)
 qt_standard_project_setup()
 
 qt_add_executable(eailidar_viewer
     src/app/main.cpp
     src/app/mainwindow.cpp
     src/app/mainwindow.h
+    src/transport/serial_transport.cpp
+    src/transport/serial_transport.h
     src/ui/scan_view.cpp
     src/ui/scan_view.h
 )
-target_link_libraries(eailidar_viewer PRIVATE Qt6::Core Qt6::Widgets eai_core)
-
-# 串口传输（可选）：Fedora 安装后自动启用 `sudo dnf install qt6-qtserialport-devel`
-find_package(Qt6 QUIET COMPONENTS SerialPort)
-if(Qt6SerialPort_FOUND)
-    target_compile_definitions(eailidar_viewer PRIVATE EAI_HAVE_SERIALPORT)
-    target_link_libraries(eailidar_viewer PRIVATE Qt6::SerialPort)
-    message(STATUS "Qt6 SerialPort 已启用")
-else()
-    message(WARNING "未找到 Qt6 SerialPort，串口传输暂不可用。安装：sudo dnf install qt6-qtserialport-devel")
-endif()
+target_link_libraries(eailidar_viewer PRIVATE Qt6::Core Qt6::Widgets Qt6::SerialPort eai_core)
