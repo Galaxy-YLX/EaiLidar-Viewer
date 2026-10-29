@@ -141,7 +141,7 @@ void ScanView::pruneExpired(qint64 now) {
 void ScanView::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event);
     QPainter p(this);
-    p.fillRect(rect(), QColor(16, 16, 20));
+    p.fillRect(rect(), QColor(10, 10, 10));
 
     const double cx = width() / 2.0;
     const double cy = height() / 2.0;
@@ -164,7 +164,7 @@ void ScanView::paintEvent(QPaintEvent* event) {
 
     // 距离网格（步进随量程自适应）
     const double step = niceStep(range_mm_);
-    p.setPen(QPen(QColor(48, 48, 56), 1));
+    p.setPen(QPen(QColor(34, 42, 36), 1));
     for (double d = step; d < range_mm_; d += step) {
         const double r = d * scale;
         p.drawEllipse(QPointF(cx, cy), r, r);
@@ -173,7 +173,7 @@ void ScanView::paintEvent(QPaintEvent* event) {
     p.drawLine(QPointF(cx, cy - range_mm_ * scale), QPointF(cx, cy + range_mm_ * scale));
 
     // 距离标尺：X 轴正半轴，步进与网格一致 + 距离标注
-    p.setPen(QPen(QColor(110, 110, 120), 1));
+    p.setPen(QPen(QColor(96, 110, 100), 1));
     const QFont oldFont = p.font();
     QFont rulerFont = oldFont;
     rulerFont.setPointSizeF(8.0);
@@ -193,7 +193,7 @@ void ScanView::paintEvent(QPaintEvent* event) {
     // 无尾迹：整圈替换，直接画最新一圈
     if (retain_ms_ == 0) {
         if (!latest_ || latest_->points.empty()) {
-            p.setPen(QColor(120, 120, 128));
+            p.setPen(QColor(60, 92, 68));
             p.drawText(rect(), Qt::AlignCenter, tr("No data"));
             return;
         }
@@ -209,7 +209,7 @@ void ScanView::paintEvent(QPaintEvent* event) {
     // 尾迹模式：逐点按年龄淡出
     if (points_.empty()) {
         if (!latest_ || latest_->points.empty()) {
-            p.setPen(QColor(120, 120, 128));
+            p.setPen(QColor(60, 92, 68));
             p.drawText(rect(), Qt::AlignCenter, tr("No data"));
         }
         return;
