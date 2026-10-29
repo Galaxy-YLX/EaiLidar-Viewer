@@ -25,8 +25,6 @@ private slots:
     void refreshPorts();
 
 private:
-    void loadDemoScan();
-
     ScanView* view_ = nullptr;
     SerialTransport* transport_ = nullptr;
     QComboBox* portCombo_ = nullptr;

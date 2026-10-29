@@ -1,6 +1,5 @@
 #include "app/mainwindow.h"
 
-#include <cmath>
 #include <memory>
 
 #include <QComboBox>
@@ -15,29 +14,6 @@
 #include "ui/scan_view.h"
 
 namespace eai {
-namespace {
-
-constexpr double kPi = 3.14159265358979323846;
-
-// 临时演示数据：生成一圈近圆形点云，用于无硬件时验证渲染。
-std::shared_ptr<Scan> makeDemoScan() {
-    auto scan = std::make_shared<Scan>();
-    scan->scan_freq_hz = 6.0;
-    const int n = 360;
-    for (int i = 0; i < n; ++i) {
-        Point pt;
-        pt.angle_deg = static_cast<double>(i);
-        pt.distance_mm = 3000.0 + 500.0 * std::sin(i * 0.05);
-        const double rad = pt.angle_deg * kPi / 180.0;
-        pt.x_mm = pt.distance_mm * std::cos(rad);
-        pt.y_mm = pt.distance_mm * std::sin(rad);
-        pt.valid = true;
-        scan->points.push_back(pt);
-    }
-    return scan;
-}
-
-} // namespace
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     view_ = new ScanView(this);
@@ -63,7 +39,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     disconnectButton_ = new QPushButton(tr("断开"), this);
     disconnectButton_->setEnabled(false);
     auto* refreshButton = new QPushButton(tr("刷新"), this);
-    auto* demoButton = new QPushButton(tr("演示"), this);
     powerOnButton_ = new QPushButton(tr("开机"), this);
     powerOffButton_ = new QPushButton(tr("关机"), this);
     powerOnButton_->setEnabled(false);
@@ -111,7 +86,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addWidget(connectButton_);
     toolbar->addWidget(disconnectButton_);
     toolbar->addWidget(refreshButton);
-    toolbar->addWidget(demoButton);
     toolbar->addWidget(powerOnButton_);
     toolbar->addWidget(powerOffButton_);
     toolbar->addSeparator();
@@ -131,7 +105,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     connect(powerOnButton_, &QPushButton::clicked, this, &MainWindow::onPowerOnClicked);
     connect(powerOffButton_, &QPushButton::clicked, this, &MainWindow::onPowerOffClicked);
     connect(refreshButton, &QPushButton::clicked, this, &MainWindow::refreshPorts);
-    connect(demoButton, &QPushButton::clicked, this, &MainWindow::loadDemoScan);
     connect(sizeSpin_, &QDoubleSpinBox::valueChanged, this, [this](double v) {
         view_->setPointRadius(v);
     });
@@ -231,15 +204,6 @@ void MainWindow::onPowerOffClicked() {
     } else {
         statusLabel_->setText(tr("关机命令发送失败"));
     }
-}
-
-void MainWindow::loadDemoScan() {
-    if (transport_->isOpen()) {
-        statusLabel_->setText(tr("请先断开串口再载入演示"));
-        return;
-    }
-    view_->setScan(makeDemoScan());
-    statusLabel_->setText(tr("演示数据"));
 }
 
 } // namespace eai
