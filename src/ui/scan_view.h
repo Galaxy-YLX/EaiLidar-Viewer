@@ -43,8 +43,6 @@ public:
     void setJumpFilter(bool enable, double threshold_mm);
     // 强度下限：强度低于阈值的点判为噪声（默认关）
     void setIntensityFilter(bool enable, int min_intensity);
-    // 远距上限：距离超过阈值的点判为噪声（默认关）
-    void setMaxDistFilter(bool enable, double max_dist_mm);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -67,8 +65,6 @@ private:
     double jump_threshold_mm_ = 100.0;
     bool intensity_enable_ = false;  // 强度下限
     int intensity_min_ = 20;
-    bool maxdist_enable_ = false;    // 远距上限
-    double maxdist_mm_ = 15000.0;
 };
 
 } // namespace eai

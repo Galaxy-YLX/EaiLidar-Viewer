@@ -115,7 +115,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         }
     }
 
-    // 滤波设置：距离跳跃（默认开 10cm）/ 强度下限（默认关）/ 远距上限（默认关）
+    // 滤波设置：距离跳跃（默认开 10cm）/ 强度下限（默认关）
     jumpCheck_ = new QCheckBox(tr("距离跳跃"), this);
     jumpCheck_->setChecked(true);
     jumpSpin_ = new QDoubleSpinBox(this);
@@ -127,15 +127,11 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     intensitySpin_ = new QSpinBox(this);
     intensitySpin_->setRange(0, 255);
     intensitySpin_->setValue(20);
-    maxDistCheck_ = new QCheckBox(tr("远距上限"), this);
-    maxDistSpin_ = new QDoubleSpinBox(this);
-    maxDistSpin_->setRange(0.1, 20.0);
-    maxDistSpin_->setDecimals(1);
-    maxDistSpin_->setValue(15.0);
-    maxDistSpin_->setSuffix(tr(" m"));
-    for (QWidget* w : {static_cast<QWidget*>(jumpSpin_),
-                       static_cast<QWidget*>(intensitySpin_),
-                       static_cast<QWidget*>(maxDistSpin_)}) {
+    // 侧边所有框统一 40px 高（与开机/关机按键一致）
+    for (QWidget* w : {static_cast<QWidget*>(jumpCheck_),
+                       static_cast<QWidget*>(jumpSpin_),
+                       static_cast<QWidget*>(intensityCheck_),
+                       static_cast<QWidget*>(intensitySpin_)}) {
         w->setFixedHeight(40);
     }
 
@@ -160,10 +156,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     intensityRow->addWidget(intensityCheck_);
     intensityRow->addWidget(intensitySpin_, 1);
     dockLayout->addLayout(intensityRow);
-    auto* maxDistRow = new QHBoxLayout();
-    maxDistRow->addWidget(maxDistCheck_);
-    maxDistRow->addWidget(maxDistSpin_, 1);
-    dockLayout->addLayout(maxDistRow);
     dockLayout->addStretch(1);
     controlDock->setWidget(dockWidget);
     addDockWidget(Qt::RightDockWidgetArea, controlDock);
@@ -198,14 +190,11 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     auto syncFilters = [this] {
         view_->setJumpFilter(jumpCheck_->isChecked(), jumpSpin_->value() * 10.0);
         view_->setIntensityFilter(intensityCheck_->isChecked(), intensitySpin_->value());
-        view_->setMaxDistFilter(maxDistCheck_->isChecked(), maxDistSpin_->value() * 1000.0);
     };
     connect(jumpCheck_, &QCheckBox::toggled, this, syncFilters);
     connect(jumpSpin_, &QDoubleSpinBox::valueChanged, this, syncFilters);
     connect(intensityCheck_, &QCheckBox::toggled, this, syncFilters);
     connect(intensitySpin_, &QSpinBox::valueChanged, this, syncFilters);
-    connect(maxDistCheck_, &QCheckBox::toggled, this, syncFilters);
-    connect(maxDistSpin_, &QDoubleSpinBox::valueChanged, this, syncFilters);
     syncFilters();
 
     connect(transport_, &SerialTransport::scanReady, this, [this](const std::shared_ptr<Scan>& s) {

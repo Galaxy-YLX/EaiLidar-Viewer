@@ -56,6 +56,8 @@ QPushButton {
     border: 1px solid #00DC78;
     border-radius: 2px;
     padding: 4px 12px;
+    min-height: 40px;
+    max-height: 40px;
 }
 QPushButton:hover {
     background-color: #00DC78;
@@ -70,13 +72,41 @@ QPushButton:disabled {
     border-color: #005A32;
     background-color: #000000;
 }
+QCheckBox {
+    background-color: #000000;
+    color: #00DC78;
+    spacing: 8px;
+    border: 1px solid #00DC78;  /* 整个按键一个边框 */
+    border-radius: 2px;
+    padding: 6px 10px;          /* 留出内边距，方块在框内 */
+    outline: none;
+    min-height: 40px;
+    max-height: 40px;
+}
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: none;  /* 方块无边框，位于文字框内部左侧 */
+    background-color: #000000;
+}
+QCheckBox::indicator:checked {
+    background-color: #00DC78;  /* 按下启用：方块亮起 */
+}
+QCheckBox:disabled {
+    color: #005A32;
+    border-color: #005A32;
+}
+QCheckBox::indicator:disabled {
+    background-color: #000000;
+}
 QComboBox, QSpinBox, QDoubleSpinBox {
     background-color: #000000;
     color: #00DC78;
     border: 1px solid #00DC78;
     border-radius: 2px;
     padding: 2px 6px;
-    min-height: 18px;
+    min-height: 40px;
+    max-height: 40px;
 }
 QComboBox:hover, QSpinBox:hover, QDoubleSpinBox:hover {
     border-color: #00DC78;

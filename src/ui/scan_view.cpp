@@ -69,9 +69,6 @@ void ScanView::setScan(const std::shared_ptr<const Scan>& scan) {
 bool ScanView::passFilter(int slot, const Point& pt) const {
     if (!pt.valid) return false;
 
-    // 远距上限
-    if (maxdist_enable_ && pt.distance_mm > maxdist_mm_) return false;
-
     // 强度下限
     if (intensity_enable_ && pt.intensity < intensity_min_) return false;
 
@@ -118,12 +115,6 @@ void ScanView::setJumpFilter(bool enable, double threshold_mm) {
 void ScanView::setIntensityFilter(bool enable, int min_intensity) {
     intensity_enable_ = enable;
     intensity_min_ = std::clamp(min_intensity, 0, 255);
-    update();
-}
-
-void ScanView::setMaxDistFilter(bool enable, double max_dist_mm) {
-    maxdist_enable_ = enable;
-    maxdist_mm_ = std::max(100.0, max_dist_mm);
     update();
 }
 
