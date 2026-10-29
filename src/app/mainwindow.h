@@ -3,6 +3,7 @@
 #include <QMainWindow>
 
 class QComboBox;
+class QDoubleSpinBox;
 class QLabel;
 class QPushButton;
 class QSlider;
@@ -37,8 +38,7 @@ private:
     QPushButton* powerOffButton_ = nullptr;
     QSlider* retainSlider_ = nullptr;
     QLabel* retainLabel_ = nullptr;
-    QSlider* sizeSlider_ = nullptr;
-    QLabel* sizeLabel_ = nullptr;
+    QDoubleSpinBox* sizeSpin_ = nullptr;
     QComboBox* rangeCombo_ = nullptr;
     QComboBox* mirrorCombo_ = nullptr;
     QComboBox* rotationCombo_ = nullptr;

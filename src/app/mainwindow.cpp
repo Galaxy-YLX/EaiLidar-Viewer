@@ -4,6 +4,7 @@
 #include <memory>
 
 #include <QComboBox>
+#include <QDoubleSpinBox>
 #include <QLabel>
 #include <QPushButton>
 #include <QSlider>
@@ -81,14 +82,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     retainSlider_->setToolTip(tr("点在屏幕上的留存时间"));
     retainLabel_ = new QLabel(tr("留存 0 ms"), this);
 
-    // 点大小调节：半径 1 ~ 8 px
-    sizeSlider_ = new QSlider(Qt::Horizontal, this);
-    sizeSlider_->setRange(1, 8);
-    sizeSlider_->setSingleStep(1);
-    sizeSlider_->setValue(1);
-    sizeSlider_->setFixedWidth(80);
-    sizeSlider_->setToolTip(tr("点的大小（半径 px）"));
-    sizeLabel_ = new QLabel(tr("点 1 px"), this);
+    // 点大小调节：半径 0.1 ~ 5.0 px，直接输入
+    sizeSpin_ = new QDoubleSpinBox(this);
+    sizeSpin_->setRange(0.1, 5.0);
+    sizeSpin_->setSingleStep(0.1);
+    sizeSpin_->setDecimals(1);
+    sizeSpin_->setValue(1.0);
+    sizeSpin_->setSuffix(tr(" px"));
+    sizeSpin_->setFixedWidth(76);
+    sizeSpin_->setToolTip(tr("点的大小（半径 px）"));
 
     // 量程选择：小范围探测可缩小到 1 m，标尺/网格步进自动变细；雷达最大量程 20 m
     rangeCombo_ = new QComboBox(this);
@@ -130,8 +132,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     toolbar->addWidget(rotationCombo_);
     toolbar->addWidget(retainLabel_);
     toolbar->addWidget(retainSlider_);
-    toolbar->addWidget(sizeLabel_);
-    toolbar->addWidget(sizeSlider_);
+    toolbar->addWidget(sizeSpin_);
 
     statusLabel_ = new QLabel(tr("未连接"), this);
     statusBar()->addWidget(statusLabel_);
@@ -148,9 +149,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         view_->setRetainMs(v);
         retainLabel_->setText(tr("留存 %1 ms").arg(v));
     });
-    connect(sizeSlider_, &QSlider::valueChanged, this, [this](int v) {
+    connect(sizeSpin_, &QDoubleSpinBox::valueChanged, this, [this](double v) {
         view_->setPointRadius(v);
-        sizeLabel_->setText(tr("点 %1 px").arg(v));
     });
     connect(rangeCombo_, &QComboBox::currentIndexChanged, this, [this](int) {
         view_->setRangeMm(rangeCombo_->currentData().toDouble());

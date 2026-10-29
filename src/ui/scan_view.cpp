@@ -73,7 +73,7 @@ void ScanView::setScan(const std::shared_ptr<const Scan>& scan) {
 }
 
 void ScanView::setPointRadius(double r) {
-    point_radius_ = std::max(0.5, r);
+    point_radius_ = std::max(0.1, r);
     update();
 }
 
