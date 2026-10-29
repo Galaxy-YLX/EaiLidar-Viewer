@@ -2,10 +2,14 @@
 
 #include <memory>
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDockWidget>
+#include <QDoubleSpinBox>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QSpinBox>
 #include <QStatusBar>
 #include <QToolBar>
 #include <QVBoxLayout>
@@ -111,7 +115,31 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         }
     }
 
-    // 侧边控制面板：开机 / 关机 / 量程（无标题栏、无边框，固定停靠右侧）
+    // 滤波设置：距离跳跃（默认开 10cm）/ 强度下限（默认关）/ 远距上限（默认关）
+    jumpCheck_ = new QCheckBox(tr("距离跳跃"), this);
+    jumpCheck_->setChecked(true);
+    jumpSpin_ = new QDoubleSpinBox(this);
+    jumpSpin_->setRange(1, 500);
+    jumpSpin_->setDecimals(0);
+    jumpSpin_->setValue(10);
+    jumpSpin_->setSuffix(tr(" cm"));
+    intensityCheck_ = new QCheckBox(tr("强度下限"), this);
+    intensitySpin_ = new QSpinBox(this);
+    intensitySpin_->setRange(0, 255);
+    intensitySpin_->setValue(20);
+    maxDistCheck_ = new QCheckBox(tr("远距上限"), this);
+    maxDistSpin_ = new QDoubleSpinBox(this);
+    maxDistSpin_->setRange(0.1, 20.0);
+    maxDistSpin_->setDecimals(1);
+    maxDistSpin_->setValue(15.0);
+    maxDistSpin_->setSuffix(tr(" m"));
+    for (QWidget* w : {static_cast<QWidget*>(jumpSpin_),
+                       static_cast<QWidget*>(intensitySpin_),
+                       static_cast<QWidget*>(maxDistSpin_)}) {
+        w->setFixedHeight(40);
+    }
+
+    // 侧边控制面板：开机 / 关机 / 量程 / 滤波（无标题栏、无边框，固定停靠右侧）
     auto* controlDock = new QDockWidget(tr("控制"), this);
     controlDock->setFeatures(QDockWidget::NoDockWidgetFeatures);
     controlDock->setTitleBarWidget(new QWidget(controlDock)); // 空标题栏 = 隐藏框
@@ -122,6 +150,20 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     dockLayout->addSpacing(8);
     dockLayout->addWidget(new QLabel(tr("量程"), dockWidget));
     dockLayout->addWidget(rangeCombo_);
+    dockLayout->addSpacing(12);
+    dockLayout->addWidget(new QLabel(tr("滤波"), dockWidget));
+    auto* jumpRow = new QHBoxLayout();
+    jumpRow->addWidget(jumpCheck_);
+    jumpRow->addWidget(jumpSpin_, 1);
+    dockLayout->addLayout(jumpRow);
+    auto* intensityRow = new QHBoxLayout();
+    intensityRow->addWidget(intensityCheck_);
+    intensityRow->addWidget(intensitySpin_, 1);
+    dockLayout->addLayout(intensityRow);
+    auto* maxDistRow = new QHBoxLayout();
+    maxDistRow->addWidget(maxDistCheck_);
+    maxDistRow->addWidget(maxDistSpin_, 1);
+    dockLayout->addLayout(maxDistRow);
     dockLayout->addStretch(1);
     controlDock->setWidget(dockWidget);
     addDockWidget(Qt::RightDockWidgetArea, controlDock);
@@ -151,6 +193,20 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     // 默认：左右镜像 + 90° 旋转（信号已连接，会同步到视图）
     mirrorCombo_->setCurrentIndex(1);
     rotationCombo_->setCurrentIndex(1);
+
+    // 滤波开关/阈值（可独立组合），任何变化同步到视图
+    auto syncFilters = [this] {
+        view_->setJumpFilter(jumpCheck_->isChecked(), jumpSpin_->value() * 10.0);
+        view_->setIntensityFilter(intensityCheck_->isChecked(), intensitySpin_->value());
+        view_->setMaxDistFilter(maxDistCheck_->isChecked(), maxDistSpin_->value() * 1000.0);
+    };
+    connect(jumpCheck_, &QCheckBox::toggled, this, syncFilters);
+    connect(jumpSpin_, &QDoubleSpinBox::valueChanged, this, syncFilters);
+    connect(intensityCheck_, &QCheckBox::toggled, this, syncFilters);
+    connect(intensitySpin_, &QSpinBox::valueChanged, this, syncFilters);
+    connect(maxDistCheck_, &QCheckBox::toggled, this, syncFilters);
+    connect(maxDistSpin_, &QDoubleSpinBox::valueChanged, this, syncFilters);
+    syncFilters();
 
     connect(transport_, &SerialTransport::scanReady, this, [this](const std::shared_ptr<Scan>& s) {
         view_->setScan(s);

@@ -49,15 +49,43 @@ void ScanView::setScan(const std::shared_ptr<const Scan>& scan) {
         if (ang < 0.0) ang += 360.0;
         const int slot = static_cast<int>(std::lround(ang / 360.0 * kSlotsPerRevolution)) %
                          kSlotsPerRevolution;
+
+        // 滤波判定：不通过的判为噪声，写入无效点（覆盖擦除该角度旧数据）
+        const bool pass = passFilter(slot, pt);
         Point& dst = slots_[slot];
         const bool wasValid = dst.valid;
         dst = pt;
         dst.angle_deg = ang; // 归一化角度
+        if (!pass) {
+            dst.valid = false;
+        }
         if (wasValid != dst.valid) {
             point_count_ += dst.valid ? 1 : -1;
         }
     }
     update();
+}
+
+bool ScanView::passFilter(int slot, const Point& pt) const {
+    if (!pt.valid) return false;
+
+    // 远距上限
+    if (maxdist_enable_ && pt.distance_mm > maxdist_mm_) return false;
+
+    // 强度下限
+    if (intensity_enable_ && pt.intensity < intensity_min_) return false;
+
+    // 距离跳跃检测：与相邻槽位的有效点比较，距离差超阈值判为噪声
+    if (jump_enable_) {
+        for (int off : {-1, 1}) {
+            const int ns = (slot + off + kSlotsPerRevolution) % kSlotsPerRevolution;
+            const Point& n = slots_[ns];
+            if (n.valid && std::abs(n.distance_mm - pt.distance_mm) > jump_threshold_mm_) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 void ScanView::setPointRadius(double r) {
@@ -78,6 +106,24 @@ void ScanView::setMirror(int mode) {
 
 void ScanView::setRotationDeg(double deg) {
     rotation_deg_ = deg;
+    update();
+}
+
+void ScanView::setJumpFilter(bool enable, double threshold_mm) {
+    jump_enable_ = enable;
+    jump_threshold_mm_ = std::max(1.0, threshold_mm);
+    update();
+}
+
+void ScanView::setIntensityFilter(bool enable, int min_intensity) {
+    intensity_enable_ = enable;
+    intensity_min_ = std::clamp(min_intensity, 0, 255);
+    update();
+}
+
+void ScanView::setMaxDistFilter(bool enable, double max_dist_mm) {
+    maxdist_enable_ = enable;
+    maxdist_mm_ = std::max(100.0, max_dist_mm);
     update();
 }
 

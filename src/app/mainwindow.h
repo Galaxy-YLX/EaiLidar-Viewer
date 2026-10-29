@@ -2,9 +2,12 @@
 
 #include <QMainWindow>
 
+class QCheckBox;
 class QComboBox;
+class QDoubleSpinBox;
 class QLabel;
 class QPushButton;
+class QSpinBox;
 
 namespace eai {
 
@@ -36,6 +39,12 @@ private:
     QComboBox* rangeCombo_ = nullptr;
     QComboBox* mirrorCombo_ = nullptr;
     QComboBox* rotationCombo_ = nullptr;
+    QCheckBox* jumpCheck_ = nullptr;
+    QDoubleSpinBox* jumpSpin_ = nullptr;
+    QCheckBox* intensityCheck_ = nullptr;
+    QSpinBox* intensitySpin_ = nullptr;
+    QCheckBox* maxDistCheck_ = nullptr;
+    QDoubleSpinBox* maxDistSpin_ = nullptr;
     QLabel* statusLabel_ = nullptr;
 };
 
