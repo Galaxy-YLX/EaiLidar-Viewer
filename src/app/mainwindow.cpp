@@ -106,7 +106,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     barFont.setPointSize(12);
     toolbar->setFont(barFont);
 
-    // 滤波设置：距离跳跃（默认关 10cm）/ 强度下限（默认关）/ 余辉（默认关，1 圈）
+    // 滤波设置：距离跳跃（默认关 10cm）/ 强度下限（默认关）/ 余辉控制（默认关，1 圈）
+    // 约定：滤波项名称统一四个字，三个 QCheckBox 共用同一套 QSS 样式（同高同字），保证对齐。
     jumpCheck_ = new QCheckBox(tr("距离跳跃"), this);
     jumpCheck_->setChecked(false);
     jumpSpin_ = new QDoubleSpinBox(this);
