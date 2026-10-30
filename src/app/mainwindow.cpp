@@ -106,9 +106,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     barFont.setPointSize(12);
     toolbar->setFont(barFont);
 
-    // 滤波设置：距离跳跃（默认开 10cm）/ 强度下限（默认关）
+    // 滤波设置：距离跳跃（默认关 10cm）/ 强度下限（默认关）
     jumpCheck_ = new QCheckBox(tr("距离跳跃"), this);
-    jumpCheck_->setChecked(true);
+    jumpCheck_->setChecked(false);
     jumpSpin_ = new QDoubleSpinBox(this);
     jumpSpin_->setRange(1, 500);
     jumpSpin_->setDecimals(0);
