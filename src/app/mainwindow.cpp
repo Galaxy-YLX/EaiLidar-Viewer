@@ -10,7 +10,6 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QSpinBox>
-#include <QStatusBar>
 #include <QToolBar>
 #include <QVBoxLayout>
 
@@ -154,8 +153,12 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     controlDock->setWidget(dockWidget);
     addDockWidget(Qt::RightDockWidgetArea, controlDock);
 
-    statusLabel_ = new QLabel(tr("未连接"), this);
-    statusBar()->addWidget(statusLabel_);
+    // 数据栏：状态信息作为 HUD 覆盖在点云视图左上角（原底部状态栏）
+    statusLabel_ = new QLabel(tr("未连接"), view_);
+    statusLabel_->setStyleSheet(QStringLiteral("background: transparent; color: #00DC78;"));
+    statusLabel_->setAttribute(Qt::WA_TransparentForMouseEvents);
+    statusLabel_->adjustSize();
+    statusLabel_->move(8, 8);
 
     refreshPorts();
 
