@@ -45,6 +45,8 @@ private:
     QSpinBox* intensitySpin_ = nullptr;
     QCheckBox* persistenceCheck_ = nullptr;
     QSpinBox* persistenceSpin_ = nullptr;
+    QCheckBox* gateCheck_ = nullptr;
+    QDoubleSpinBox* gateSpin_ = nullptr;
     QLabel* statusLabel_ = nullptr;
 };
 

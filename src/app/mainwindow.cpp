@@ -105,8 +105,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     barFont.setPointSize(12);
     toolbar->setFont(barFont);
 
-    // 滤波设置：距离跳跃（默认关 10cm）/ 强度下限（默认关）/ 余辉控制（默认关，1 圈）
-    // 约定：滤波项名称统一四个字，三个 QCheckBox 共用同一套 QSS 样式（同高同字），保证对齐。
+    // 滤波设置：距离跳跃（默认关 10cm）/ 强度下限（默认关）/ 余辉控制（默认关，1 圈）/ 门限验证（默认关 5mm）
+    // 约定：滤波项名称统一四个字，各 QCheckBox 共用同一套 QSS 样式（同高同字），保证对齐。
     jumpCheck_ = new QCheckBox(tr("距离跳跃"), this);
     jumpCheck_->setChecked(false);
     jumpSpin_ = new QDoubleSpinBox(this);
@@ -123,6 +123,12 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     persistenceSpin_->setRange(1, 10);
     persistenceSpin_->setValue(1);
     persistenceSpin_->setSuffix(tr(" 圈"));
+    gateCheck_ = new QCheckBox(tr("门限验证"), this);
+    gateSpin_ = new QDoubleSpinBox(this);
+    gateSpin_->setRange(1, 5000);
+    gateSpin_->setDecimals(0);
+    gateSpin_->setValue(5);
+    gateSpin_->setSuffix(tr(" mm"));
 
     // 侧边控制面板：开机 / 关机 / 量程 / 滤波（无标题栏、无边框，固定停靠右侧）
     auto* controlDock = new QDockWidget(tr("控制"), this);
@@ -149,6 +155,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     persistenceRow->addWidget(persistenceCheck_);
     persistenceRow->addWidget(persistenceSpin_, 1);
     dockLayout->addLayout(persistenceRow);
+    auto* gateRow = new QHBoxLayout();
+    gateRow->addWidget(gateCheck_);
+    gateRow->addWidget(gateSpin_, 1);
+    dockLayout->addLayout(gateRow);
     dockLayout->addStretch(1);
     controlDock->setWidget(dockWidget);
     addDockWidget(Qt::RightDockWidgetArea, controlDock);
@@ -188,6 +198,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         view_->setJumpFilter(jumpCheck_->isChecked(), jumpSpin_->value() * 10.0);
         view_->setIntensityFilter(intensityCheck_->isChecked(), intensitySpin_->value());
         view_->setPersistence(persistenceCheck_->isChecked(), persistenceSpin_->value());
+        view_->setGateFilter(gateCheck_->isChecked(), gateSpin_->value());
     };
     connect(jumpCheck_, &QCheckBox::toggled, this, syncFilters);
     connect(jumpSpin_, &QDoubleSpinBox::valueChanged, this, syncFilters);
@@ -195,6 +206,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     connect(intensitySpin_, &QSpinBox::valueChanged, this, syncFilters);
     connect(persistenceCheck_, &QCheckBox::toggled, this, syncFilters);
     connect(persistenceSpin_, &QSpinBox::valueChanged, this, syncFilters);
+    connect(gateCheck_, &QCheckBox::toggled, this, syncFilters);
+    connect(gateSpin_, &QDoubleSpinBox::valueChanged, this, syncFilters);
     syncFilters();
 
     connect(transport_, &SerialTransport::scanReady, this, [this](const std::shared_ptr<Scan>& s) {

@@ -144,6 +144,12 @@ void ScanView::setPersistence(bool enable, int revolutions) {
     update();
 }
 
+void ScanView::setGateFilter(bool enable, double gate_mm) {
+    gate_enable_ = enable;
+    gate_mm_ = std::max(1.0, gate_mm);
+    update();
+}
+
 void ScanView::decayExpired() {
     if (!persistence_enable_) return;
 
@@ -157,11 +163,30 @@ void ScanView::decayExpired() {
         if (!p.valid) continue;
         const double age_ms =
             std::chrono::duration<double, std::milli>(now - stamps_[i]).count();
-        if (age_ms > threshold_ms) {
-            p.valid = false;
-            --point_count_;
-        }
+        if (age_ms <= threshold_ms) continue;
+        // 过期候选：开启门限验证且距离门内存在新点，则视为关联上、不清除
+        if (gate_enable_ && gateMatched(i, threshold_ms, now)) continue;
+        p.valid = false;
+        --point_count_;
     }
+}
+
+bool ScanView::gateMatched(int slot, double threshold_ms,
+                           std::chrono::steady_clock::time_point now) const {
+    const Point& p = slots_[slot];
+    const double gate2 = gate_mm_ * gate_mm_;
+    for (int j = 0; j < kSlotsPerRevolution; ++j) {
+        if (j == slot) continue;
+        const Point& q = slots_[j];
+        if (!q.valid) continue;
+        const double age_ms =
+            std::chrono::duration<double, std::milli>(now - stamps_[j]).count();
+        if (age_ms > threshold_ms) continue; // 只与未过期的新点关联
+        const double dx = p.x_mm - q.x_mm;
+        const double dy = p.y_mm - q.y_mm;
+        if (dx * dx + dy * dy <= gate2) return true;
+    }
+    return false;
 }
 
 void ScanView::paintEvent(QPaintEvent* event) {

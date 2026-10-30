@@ -47,6 +47,8 @@ public:
     void setIntensityFilter(bool enable, int min_intensity);
     // 余辉控制：点超过指定圈数未被刷新则清除（默认关，保留 1 圈）
     void setPersistence(bool enable, int revolutions);
+    // 门限验证：过期的旧点附近若出现距离门内的新点，则关联上、不清除（默认关）
+    void setGateFilter(bool enable, double gate_mm);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -58,6 +60,9 @@ private:
     bool passFilter(int slot, const Point& pt) const;
     // 清除超过保留圈数仍未刷新的点
     void decayExpired();
+    // 门限验证：旧点 slot 附近是否存在距离门内的新点（未过期且距离 <= gate）
+    bool gateMatched(int slot, double threshold_ms,
+                     std::chrono::steady_clock::time_point now) const;
 
     std::vector<Point> slots_; // 按角度槽位存储的点；valid=false 表示该角度无数据
     std::vector<std::chrono::steady_clock::time_point> stamps_; // 每个槽位最后刷新时刻
@@ -75,6 +80,8 @@ private:
     int intensity_min_ = 20;
     bool persistence_enable_ = false; // 余辉清除
     int persistence_revs_ = 1;       // 保留圈数
+    bool gate_enable_ = false;       // 门限验证
+    double gate_mm_ = 100.0;         // 距离门（mm）
     QTimer decayTimer_;              // 周期性触发过期清除与重绘
 };
 
