@@ -1,7 +1,9 @@
 #pragma once
 
+#include <QTimer>
 #include <QWidget>
 
+#include <chrono>
 #include <memory>
 #include <vector>
 
@@ -39,10 +41,12 @@ public:
     double rotationDeg() const { return rotation_deg_; }
 
     // 滤波开关（可独立组合）
-    // 距离跳跃检测：相邻角度点距离差超过阈值判为噪声（默认开，100 mm）
+    // 距离跳跃检测：相邻角度点距离差超过阈值判为噪声（默认关，100 mm）
     void setJumpFilter(bool enable, double threshold_mm);
     // 强度下限：强度低于阈值的点判为噪声（默认关）
     void setIntensityFilter(bool enable, int min_intensity);
+    // 余辉控制：点超过指定圈数未被刷新则清除（默认关，保留 1 圈）
+    void setPersistence(bool enable, int revolutions);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -52,19 +56,26 @@ private:
 
     // 写入槽位前对点做滤波判定；返回 true 表示该点应写入
     bool passFilter(int slot, const Point& pt) const;
+    // 清除超过保留圈数仍未刷新的点
+    void decayExpired();
 
     std::vector<Point> slots_; // 按角度槽位存储的点；valid=false 表示该角度无数据
+    std::vector<std::chrono::steady_clock::time_point> stamps_; // 每个槽位最后刷新时刻
     int point_count_ = 0;
     double range_mm_ = 10000.0; // 视图半幅范围（mm）
     double point_radius_ = 0.5; // 点绘制半径（px）
     int mirror_ = 1;            // 镜像模式 0/1/2/3，默认左右镜像
     double rotation_deg_ = 90.0; // 显示旋转角度（°），默认 90°
+    double scan_freq_hz_ = 0.0; // 最近一帧扫描频率，用于把“圈”换算成时间
 
     // 滤波配置
-    bool jump_enable_ = true;        // 距离跳跃检测
+    bool jump_enable_ = false;       // 距离跳跃检测
     double jump_threshold_mm_ = 100.0;
     bool intensity_enable_ = false;  // 强度下限
     int intensity_min_ = 20;
+    bool persistence_enable_ = false; // 余辉清除
+    int persistence_revs_ = 1;       // 保留圈数
+    QTimer decayTimer_;              // 周期性触发过期清除与重绘
 };
 
 } // namespace eai

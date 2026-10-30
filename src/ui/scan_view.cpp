@@ -33,6 +33,14 @@ double niceStep(double range_mm) {
 ScanView::ScanView(QWidget* parent) : QWidget(parent) {
     setMinimumSize(400, 400);
     slots_.resize(kSlotsPerRevolution);
+    stamps_.resize(kSlotsPerRevolution);
+
+    // 余辉：周期性清除过期点并重绘，使拖影随时间消失
+    decayTimer_.setInterval(50);
+    connect(&decayTimer_, &QTimer::timeout, this, [this] {
+        decayExpired();
+        update();
+    });
 }
 
 void ScanView::setScan(const std::shared_ptr<const Scan>& scan) {
@@ -43,7 +51,13 @@ void ScanView::setScan(const std::shared_ptr<const Scan>& scan) {
         return;
     }
 
+    scan_freq_hz_ = scan->scan_freq_hz;
+
+    // 先清除已过期的点，避免陈旧数据残留（拖影）
+    decayExpired();
+
     // 逐点按其角度写入槽位，覆盖该角度上一次的数据
+    const auto now = std::chrono::steady_clock::now();
     for (const auto& pt : scan->points) {
         double ang = std::fmod(pt.angle_deg, 360.0);
         if (ang < 0.0) ang += 360.0;
@@ -59,6 +73,7 @@ void ScanView::setScan(const std::shared_ptr<const Scan>& scan) {
         if (!pass) {
             dst.valid = false;
         }
+        stamps_[slot] = now; // 记录刷新时刻（无论是否有效，均代表该角度已更新）
         if (wasValid != dst.valid) {
             point_count_ += dst.valid ? 1 : -1;
         }
@@ -116,6 +131,37 @@ void ScanView::setIntensityFilter(bool enable, int min_intensity) {
     intensity_enable_ = enable;
     intensity_min_ = std::clamp(min_intensity, 0, 255);
     update();
+}
+
+void ScanView::setPersistence(bool enable, int revolutions) {
+    persistence_enable_ = enable;
+    persistence_revs_ = std::max(1, revolutions);
+    if (enable) {
+        decayTimer_.start();
+    } else {
+        decayTimer_.stop();
+    }
+    update();
+}
+
+void ScanView::decayExpired() {
+    if (!persistence_enable_) return;
+
+    // 一圈时长 = 1000 / 扫描频率；频率未知时按 10 Hz 估计
+    const double period_ms = scan_freq_hz_ > 0.0 ? 1000.0 / scan_freq_hz_ : 100.0;
+    const double threshold_ms = persistence_revs_ * period_ms;
+
+    const auto now = std::chrono::steady_clock::now();
+    for (int i = 0; i < kSlotsPerRevolution; ++i) {
+        Point& p = slots_[i];
+        if (!p.valid) continue;
+        const double age_ms =
+            std::chrono::duration<double, std::milli>(now - stamps_[i]).count();
+        if (age_ms > threshold_ms) {
+            p.valid = false;
+            --point_count_;
+        }
+    }
 }
 
 void ScanView::paintEvent(QPaintEvent* event) {

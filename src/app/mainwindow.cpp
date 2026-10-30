@@ -106,7 +106,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     barFont.setPointSize(12);
     toolbar->setFont(barFont);
 
-    // 滤波设置：距离跳跃（默认关 10cm）/ 强度下限（默认关）
+    // 滤波设置：距离跳跃（默认关 10cm）/ 强度下限（默认关）/ 余辉（默认关，1 圈）
     jumpCheck_ = new QCheckBox(tr("距离跳跃"), this);
     jumpCheck_->setChecked(false);
     jumpSpin_ = new QDoubleSpinBox(this);
@@ -118,6 +118,11 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     intensitySpin_ = new QSpinBox(this);
     intensitySpin_->setRange(0, 255);
     intensitySpin_->setValue(20);
+    persistenceCheck_ = new QCheckBox(tr("余辉控制"), this);
+    persistenceSpin_ = new QSpinBox(this);
+    persistenceSpin_->setRange(1, 10);
+    persistenceSpin_->setValue(1);
+    persistenceSpin_->setSuffix(tr(" 圈"));
 
     // 侧边控制面板：开机 / 关机 / 量程 / 滤波（无标题栏、无边框，固定停靠右侧）
     auto* controlDock = new QDockWidget(tr("控制"), this);
@@ -140,6 +145,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     intensityRow->addWidget(intensityCheck_);
     intensityRow->addWidget(intensitySpin_, 1);
     dockLayout->addLayout(intensityRow);
+    auto* persistenceRow = new QHBoxLayout();
+    persistenceRow->addWidget(persistenceCheck_);
+    persistenceRow->addWidget(persistenceSpin_, 1);
+    dockLayout->addLayout(persistenceRow);
     dockLayout->addStretch(1);
     controlDock->setWidget(dockWidget);
     addDockWidget(Qt::RightDockWidgetArea, controlDock);
@@ -174,11 +183,14 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     auto syncFilters = [this] {
         view_->setJumpFilter(jumpCheck_->isChecked(), jumpSpin_->value() * 10.0);
         view_->setIntensityFilter(intensityCheck_->isChecked(), intensitySpin_->value());
+        view_->setPersistence(persistenceCheck_->isChecked(), persistenceSpin_->value());
     };
     connect(jumpCheck_, &QCheckBox::toggled, this, syncFilters);
     connect(jumpSpin_, &QDoubleSpinBox::valueChanged, this, syncFilters);
     connect(intensityCheck_, &QCheckBox::toggled, this, syncFilters);
     connect(intensitySpin_, &QSpinBox::valueChanged, this, syncFilters);
+    connect(persistenceCheck_, &QCheckBox::toggled, this, syncFilters);
+    connect(persistenceSpin_, &QSpinBox::valueChanged, this, syncFilters);
     syncFilters();
 
     connect(transport_, &SerialTransport::scanReady, this, [this](const std::shared_ptr<Scan>& s) {
